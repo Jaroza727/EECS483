@@ -26,3 +26,6 @@
 *.exe
 *.out
 *.app
+
+# OS X tmp file
+*.DS_Store
