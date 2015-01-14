@@ -46,6 +46,8 @@ struct yyltype yylloc; // manually dclared for pp1, later Yacc provides
 static void DoBeforeEachAction(); 
 #define YY_USER_ACTION DoBeforeEachAction();
 
+
+static void resetYyllocColumn();
 %}
 
  /* The section before the first %% is the Definitions section of the lex
@@ -55,12 +57,55 @@ static void DoBeforeEachAction();
   * entries in the Rules section later. 
   */
 
+NEWLINE         (\n)
+WHITESPACE      [ \t]
+IDENTIFIER      ([a-zA-Z]+[a-zA-Z0-9_]*)
+
 
 %%             /* BEGIN RULES SECTION */
  /* All patterns and actions should be placed between the start and stop
   * %% markers which delimit the Rules section. 
   */ 
 
+{NEWLINE} {
+    yylloc.first_line ++;
+    resetYyllocColumn();
+}
+
+{WHITESPACE} {
+    yylloc.last_column ++;
+}
+
+void {return T_Void;}
+int {return T_Int;}
+double {return T_Double;}
+bool {return T_Bool;}
+string {return T_String;}
+class {return T_Class;}
+interface {return T_Interface;}
+null {return T_Null;}
+this {return T_This;}
+extends {return T_Extends;}
+implements {return T_Implements;}
+for {return T_For;}
+while {return T_While;}
+if {return T_If;}
+else {return T_Else;}
+return {return T_Return;}
+break {return T_Break;}
+New {return T_New;}
+(New\ Array) {return T_NewArray;}
+\=\= {return T_Equal;}
+\>\= {return T_GreaterEqual;}
+\<\= {return T_LessEqual;}
+\|\| {return T_Or;}
+\(|\)|\{|\}|\!|\,|\;|\=|\>|\<|\/|\*|\-|\+ {return yytext[0];}
+
+{IDENTIFIER} {
+    /* TODO: Test max length*/
+    strncpy(yylval.identifier, yytext, MaxIdentLen);
+    return T_Identifier;
+}
 
 %%
 /* The closing %% above marks the end of the Rules section and the beginning
@@ -85,7 +130,10 @@ static void DoBeforeEachAction();
 void InitScanner()
 {
     PrintDebug("lex", "Initializing scanner");
-    yy_flex_debug = false;
+    yy_flex_debug = false; // change to false before turning in
+
+    yylloc.first_line = 1;
+    resetYyllocColumn();
 }
 
 
@@ -96,4 +144,13 @@ void InitScanner()
  */
 static void DoBeforeEachAction()
 {
+    yylloc.first_column = yylloc.last_column;
+    yylloc.last_column += strlen(yytext) - 1;
+}
+
+
+static void resetYyllocColumn()
+{
+    yylloc.first_column = 1;
+    yylloc.last_column = 1;
 }

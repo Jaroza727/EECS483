@@ -23,9 +23,14 @@
 *.lib
 
 # Executables
+dcc
+dpp
 *.exe
 *.out
 *.app
+
+# Lex compiled file
+*.yy.c
 
 # OS X tmp file
 *.DS_Store
