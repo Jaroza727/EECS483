@@ -6,7 +6,3 @@
 
 // This is not mentioned any where
 'single quotes'
-
-// This needs clarification.
-// According to doc, strings cannot contain double quote.
-"string \" escape \""

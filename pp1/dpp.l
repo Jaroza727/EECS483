@@ -16,14 +16,22 @@ int linenum = 1;
 bool inComment = false;
 %}
 
+STRING              \"([^\"\n]|\\\")*\"
+ONELINE_COMMENT     \/\/.*
+MULTILINE_COMMENT   \/\*([^*]|[\r\n]|(\*+([^*\/]|[\r\n])))*\*+\/
+DEFINE              #define\ [A-Z]+\ .*
+DEFINED_VAR         #[A-Z]+
+HASH                #[^A-Z\n]*
+NEWLINE             \n
+OTHER               .
 
 %%
 
-\"([^\"\n]|\\\")*\" {
+{STRING} {
     ECHO;
 }
 
-\/\*([^*]|[\r\n]|(\*+([^*\/]|[\r\n])))*\*+\/ {
+{MULTILINE_COMMENT} {
     char *text = yytext;
     while (*text) {
         if (*text++ == '\n')
@@ -31,9 +39,9 @@ bool inComment = false;
     }
 }
 
-\/\/.* ;
+{ONELINE_COMMENT} ;
 
-#define\ [A-Z]+\ .* {
+{DEFINE} {
     size_t start = strlen("#define ");
     size_t end = start;
     while (yytext[end] != ' ')
@@ -43,7 +51,7 @@ bool inComment = false;
     defineTable[key] = value;
 }
 
-#[A-Z]+ {
+{DEFINED_VAR} {
     std::string key(yytext + 1, strlen(yytext) - 1);
     std::unordered_map<std::string,std::string>::const_iterator value_i = defineTable.find(key);
     if (value_i != defineTable.end()) {
@@ -53,16 +61,16 @@ bool inComment = false;
     }
 }
 
-#[^A-Z\n]* {
+{HASH} {
     ReportError::InvalidDirective(linenum);
 }
 
-\n {
+{NEWLINE} {
     linenum ++;
     ECHO;
 }
 
-. {
+{OTHER} {
     ECHO;
 }
 

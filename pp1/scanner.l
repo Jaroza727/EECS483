@@ -12,6 +12,7 @@
  */
 
 #include <string.h>
+#include <unordered_map>
 #include "scanner.h"
 #include "utility.h" // for PrintDebug()
 #include "errors.h"
@@ -45,9 +46,8 @@ struct yyltype yylloc; // manually dclared for pp1, later Yacc provides
  */
 static void DoBeforeEachAction(); 
 #define YY_USER_ACTION DoBeforeEachAction();
+std::unordered_map<string, int> types;
 
-
-static void resetYyllocColumn();
 %}
 
  /* The section before the first %% is the Definitions section of the lex
@@ -57,52 +57,93 @@ static void resetYyllocColumn();
   * entries in the Rules section later. 
   */
 
-NEWLINE         (\n)
-WHITESPACE      [ \t]
-IDENTIFIER      ([a-zA-Z]+[a-zA-Z0-9_]*)
-
+WHITESPACE	(" "|"\t")+
+NEWLINE		("\n")+
+CHARACTER   "+"|"-"|"*"|"/"|"%"|"<"|">"|"="|"!"|";"|","|"."|"["|"]"|"("|")"|"{"|"}"|"<="|">="|"=="|"!="|"&&"|"||"
+KEYWORD		void|int|double|bool|string|class|interface|null|this|extends|implements|for|while|if|else|return|break|New|NewArray
+DIGIT       [0-9]
+HEXDIGIT    {DIGIT}|[a-fA-F]
+DECIMAL     {DIGIT}+
+HEXADECIMAL 0(X|x){HEXDIGIT}+
+DOUBLE      {DIGIT}+"."{DIGIT}*(E[+|-]?{DIGIT}+)?
+STRING      \"[^\n\"]*(\"|\n)
+/*"*/
+BOOLEAN 	true|false
+LETTER		[a-zA-Z]
+ID			{LETTER}({LETTER}|{DIGIT}|"_")*
 
 %%             /* BEGIN RULES SECTION */
  /* All patterns and actions should be placed between the start and stop
   * %% markers which delimit the Rules section. 
   */ 
-
-{NEWLINE} {
-    yylloc.first_line ++;
-    resetYyllocColumn();
+{WHITESPACE} {
 }
 
-{WHITESPACE} ;
+{NEWLINE} {
+	yylloc.last_line += strlen(yytext);
+    yytext[0] = '\0';
+	yylloc.last_column = 0;
+}
 
-void {return T_Void;}
-int {return T_Int;}
-double {return T_Double;}
-bool {return T_Bool;}
-string {return T_String;}
-class {return T_Class;}
-interface {return T_Interface;}
-null {return T_Null;}
-this {return T_This;}
-extends {return T_Extends;}
-implements {return T_Implements;}
-for {return T_For;}
-while {return T_While;}
-if {return T_If;}
-else {return T_Else;}
-return {return T_Return;}
-break {return T_Break;}
-New {return T_New;}
-(New\ Array) {return T_NewArray;}
-\=\= {return T_Equal;}
-\>\= {return T_GreaterEqual;}
-\<\= {return T_LessEqual;}
-\|\| {return T_Or;}
-\(|\)|\{|\}|\!|\,|\;|\=|\>|\<|\/|\*|\-|\+ {return yytext[0];}
+{CHARACTER}|{KEYWORD} {
+	return types[yytext];
+}
 
-{IDENTIFIER} {
-    /* TODO: Test max length*/
-    strncpy(yylval.identifier, yytext, MaxIdentLen);
-    return T_Identifier;
+true {
+    yylval.boolConstant = 1;
+    return T_BoolConstant;
+}
+
+false {
+    yylval.boolConstant = 0;
+    return T_BoolConstant;
+}
+
+{DECIMAL} {
+    yylval.integerConstant = std::stoi(yytext);
+    return T_IntConstant;
+}
+
+{HEXADECIMAL} {
+    yylval.integerConstant = std::stoi(yytext, nullptr, 16);
+    return T_IntConstant;
+}
+
+{DOUBLE} {
+    yylval.doubleConstant = std::stod(yytext);
+    return T_DoubleConstant;
+}
+
+{STRING} {
+    if (yytext[strlen(yytext) - 1] == '\n')
+    {
+        yytext[strlen(yytext) - 1] = '\0';
+        ++yylloc.last_line;
+        yylloc.last_column = 0;
+        ReportError::UntermString(&yylloc, yytext);
+    }
+    else
+    {
+        yylval.stringConstant = yytext;
+        return T_StringConstant;
+    }
+}
+
+{ID} {
+    if (strlen(yytext) > MaxIdentLen)
+    {
+        ReportError::LongIdentifier(&yylloc, yytext);
+        strncpy(yylval.identifier, yytext, MaxIdentLen);
+    }
+    else
+    {
+        strcpy(yylval.identifier, yytext);
+    }
+	return T_Identifier;
+}
+
+. {
+    ReportError::UnrecogChar(&yylloc, yytext[0]);
 }
 
 %%
@@ -128,10 +169,52 @@ New {return T_New;}
 void InitScanner()
 {
     PrintDebug("lex", "Initializing scanner");
-    yy_flex_debug = false; // change to false before turning in
-
-    yylloc.first_line = 1;
-    resetYyllocColumn();
+    yy_flex_debug = false;
+    yylloc.first_line = yylloc.last_line = 1;
+    yylloc.first_column = yylloc.last_column = 0;
+    types["<="] = T_LessEqual;
+    types[">="] = T_GreaterEqual;
+    types["=="] = T_Equal;
+    types["!="] = T_NotEqual;
+    types["&&"] = T_And;
+    types["||"] = T_Or;
+    types["void"] = T_Void;
+    types["int"] = T_Int;
+    types["double"] = T_Double;
+    types["bool"] = T_Bool;
+    types["string"] = T_String;
+    types["class"] = T_Class;
+    types["interface"] = T_Interface;
+    types["null"] = T_Null;
+    types["this"] = T_This;
+    types["extends"] = T_Extends;
+    types["implements"] = T_Implements;
+    types["for"] = T_For;
+    types["while"] = T_While;
+    types["if"] = T_If;
+    types["else"] = T_Else;
+    types["return"] = T_Return;
+    types["break"] = T_Break;
+    types["New"] = T_New;
+    types["NewArray"] = T_NewArray;
+    types["+"] = '+';
+    types["-"] = '-';
+    types["*"] = '*';
+    types["/"] = '/';
+    types["%"] = '%';
+    types["<"] = '<';
+    types[">"] = '>';
+    types["="] = '=';
+    types["!"] = '!';
+    types[";"] = ';';
+    types[","] = ',';
+    types["."] = '.';
+    types["["] = '[';
+    types["]"] = ']';
+    types["("] = '(';
+    types[")"] = ')';
+    types["{"] = '{';
+    types["}"] = '}';
 }
 
 
@@ -142,16 +225,7 @@ void InitScanner()
  */
 static void DoBeforeEachAction()
 {
-    if (strlen(yytext) > 0)
-    {
-        yylloc.first_column = yylloc.last_column + 1;
-        yylloc.last_column += strlen(yytext);
-    }
-}
-
-
-static void resetYyllocColumn()
-{
-    yylloc.first_column = 0;
-    yylloc.last_column = 0;
+	yylloc.first_line = yylloc.last_line;
+	yylloc.first_column = yylloc.last_column + 1;
+    yylloc.last_column += strlen(yytext);
 }
