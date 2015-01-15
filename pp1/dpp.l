@@ -14,6 +14,7 @@
 std::unordered_map<std::string, std::string> defineTable;
 int linenum = 1;
 bool inComment = false;
+bool inString = false;
 %}
 
 
