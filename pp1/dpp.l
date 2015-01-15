@@ -11,6 +11,7 @@
 #include "errors.h"
 #include <unordered_map>
 
+void printNewLine(char * text);
 std::unordered_map<std::string, std::string> defineTable;
 int linenum = 1;
 bool inComment = false;
@@ -19,6 +20,7 @@ bool inComment = false;
 STRING              \"[^\"\n]*\"
 ONELINE_COMMENT     \/\/.*
 MULTILINE_COMMENT   \/\*([^*]|[\r\n]|(\*+([^*\/]|[\r\n])))*\*+\/
+UNTERM_COMMENT      \/\*([^*]|[\r\n]|(\*+([^*\/]|[\r\n])))*\**[^\/]?
 DEFINE              #define\ [A-Z]+\ .*
 DEFINED_VAR         #[A-Za-z]+
 INVALID_HASH        #[^A-Za-z]*
@@ -32,11 +34,12 @@ OTHER               .
 }
 
 {MULTILINE_COMMENT} {
-    char *text = yytext;
-    while (*text) {
-        if (*text++ == '\n')
-            printf("\n");
-    }
+    printNewLine(yytext);
+}
+
+{UNTERM_COMMENT} {
+    printNewLine(yytext);
+    ReportError::UntermComment();
 }
 
 {ONELINE_COMMENT} ;
@@ -74,4 +77,10 @@ OTHER               .
     ECHO;
 }
 
-
+%%
+void printNewLine(char * text) {
+    while (*text) {
+        if (*text++ == '\n')
+            printf("\n");
+    }
+}

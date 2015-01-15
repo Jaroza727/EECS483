@@ -8,8 +8,6 @@
 #include "errors.h"
 #include <stdio.h>
 
-extern bool inComment;
-
 /* Function: main()
  * ----------------
  * Entry point to the preprocessor.
@@ -23,8 +21,5 @@ extern bool inComment;
 int main(int argc, char *argv[])
 {
     yylex();
-    if (inComment) {
-        ReportError::UntermComment();
-    }
     return 0;
 }
