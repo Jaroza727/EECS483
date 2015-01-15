@@ -20,7 +20,8 @@ bool inComment = false;
 %%
 
 \"([^\"\n]|\\\")*\" {
-    printf("%s", yytext);
+    if (!inComment)
+        ECHO;
 }
 
 \/\* {inComment = true;}
