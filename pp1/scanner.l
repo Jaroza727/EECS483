@@ -65,7 +65,7 @@ DIGIT       [0-9]
 HEXDIGIT    {DIGIT}|[a-fA-F]
 DECIMAL     {DIGIT}+
 HEXADECIMAL 0(X|x){HEXDIGIT}+
-DOUBLE      {DIGIT}+"."{DIGIT}*(E[+|-]?{DIGIT}+)?
+DOUBLE      {DIGIT}+"."{DIGIT}*((E|e)[+-]?{DIGIT}+)?
 STRING      \"[^\n\"]*(\"|\n)
 /*"*/
 BOOLEAN 	true|false

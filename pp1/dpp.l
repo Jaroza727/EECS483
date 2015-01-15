@@ -20,8 +20,8 @@ STRING              \"[^\"\n]*\"
 ONELINE_COMMENT     \/\/.*
 MULTILINE_COMMENT   \/\*([^*]|[\r\n]|(\*+([^*\/]|[\r\n])))*\*+\/
 DEFINE              #define\ [A-Z]+\ .*
-DEFINED_VAR         #[A-Z]+
-INVALID_HASH        #[^\n\t ]*
+DEFINED_VAR         #[A-Za-z]+
+INVALID_HASH        #[^A-Za-z]*
 NEWLINE             \n
 OTHER               .
 

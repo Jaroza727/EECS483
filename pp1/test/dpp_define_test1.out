@@ -19,16 +19,9 @@ name isagoodname
 *** Invalid # directive
 
 
-
-*** Error line 14.
-*** Invalid # directive
-
-
-
-*** Error line 15.
-*** Invalid # directive
-
-
+name_isagoodname
+name123
+name=
 
 
 
