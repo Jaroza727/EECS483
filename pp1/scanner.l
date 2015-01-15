@@ -57,8 +57,9 @@ std::unordered_map<string, int> types;
   * entries in the Rules section later. 
   */
 
-WHITESPACE	(" "|"\t")+
+WHITESPACE	(" ")+
 NEWLINE		("\n")+
+TAB         ("\t")+
 CHARACTER   "+"|"-"|"*"|"/"|"%"|"<"|">"|"="|"!"|";"|","|"."|"["|"]"|"("|")"|"{"|"}"|"<="|">="|"=="|"!="|"&&"|"||"
 KEYWORD		void|int|double|bool|string|class|interface|null|this|extends|implements|for|while|if|else|return|break|New|NewArray
 DIGIT       [0-9]
@@ -79,9 +80,14 @@ ID			{LETTER}({LETTER}|{DIGIT}|"_")*
 {WHITESPACE} {
 }
 
+{TAB} {
+    yylloc.last_column = yylloc.first_column;
+    yylloc.last_column += 8 - (yylloc.last_column % 8);
+    yylloc.last_column += (strlen(yytext) - 1) * 8;
+}
+
 {NEWLINE} {
 	yylloc.last_line += strlen(yytext);
-    yytext[0] = '\0';
 	yylloc.last_column = 0;
 }
 
