@@ -5,7 +5,10 @@
  */
  
 #include "scanner.h"
+#include "errors.h"
 #include <stdio.h>
+
+extern bool inComment;
 
 /* Function: main()
  * ----------------
@@ -19,8 +22,9 @@
  */
 int main(int argc, char *argv[])
 {
-  int ch;
-  while ((ch = getc(stdin)) != EOF)
-    putc(ch, stdout);
-  return 0;
+    yylex();
+    if (inComment) {
+        ReportError::UntermComment();
+    }
+    return 0;
 }

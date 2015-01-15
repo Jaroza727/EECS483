@@ -72,9 +72,7 @@ IDENTIFIER      ([a-zA-Z]+[a-zA-Z0-9_]*)
     resetYyllocColumn();
 }
 
-{WHITESPACE} {
-    yylloc.last_column ++;
-}
+{WHITESPACE} ;
 
 void {return T_Void;}
 int {return T_Int;}
@@ -144,13 +142,16 @@ void InitScanner()
  */
 static void DoBeforeEachAction()
 {
-    yylloc.first_column = yylloc.last_column;
-    yylloc.last_column += strlen(yytext) - 1;
+    if (strlen(yytext) > 0)
+    {
+        yylloc.first_column = yylloc.last_column + 1;
+        yylloc.last_column += strlen(yytext);
+    }
 }
 
 
 static void resetYyllocColumn()
 {
-    yylloc.first_column = 1;
-    yylloc.last_column = 1;
+    yylloc.first_column = 0;
+    yylloc.last_column = 0;
 }
