@@ -1,0 +1,15 @@
+
+ is empty
+
+
+"#define IN string"
+"# in string"
+
+*** Error line 7.
+*** Invalid # directive
+
+
+
+"this is a good #NAME"
+"this is a bad #name"
+#nameisagoodname

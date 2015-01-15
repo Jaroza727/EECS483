@@ -14,24 +14,21 @@
 std::unordered_map<std::string, std::string> defineTable;
 int linenum = 1;
 bool inComment = false;
-bool inString = false;
 %}
 
 
 %%
 
 \"([^\"\n]|\\\")*\" {
-    if (!inComment)
-        ECHO;
+    ECHO;
 }
 
-\/\* {inComment = true;}
-
-\*\/ {
-    if (inComment)
-        inComment = false;
-    else
-        ECHO;
+\/\*([^*]|[\r\n]|(\*+([^*\/]|[\r\n])))*\*+\/ {
+    char *text = yytext;
+    while (*text) {
+        if (*text++ == '\n')
+            printf("\n");
+    }
 }
 
 \/\/.* ;
@@ -56,7 +53,7 @@ bool inString = false;
     }
 }
 
-# {
+#[^A-Z\n]* {
     ReportError::InvalidDirective(linenum);
 }
 
@@ -66,9 +63,7 @@ bool inString = false;
 }
 
 . {
-    if (!inComment) {
-        ECHO;
-    }
+    ECHO;
 }
 
 

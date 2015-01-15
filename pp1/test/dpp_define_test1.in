@@ -1,0 +1,12 @@
+#define EMPTY 
+#EMPTY is empty
+
+/* #define IN comment */
+"#define IN string"
+"# in string"
+#IN
+
+#define NAME name
+"this is a good #NAME"
+"this is a bad #name"
+#NAMEisagoodname /* !! this one still requires clarification */

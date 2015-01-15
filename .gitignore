@@ -26,7 +26,6 @@
 dcc
 dpp
 *.exe
-*.out
 *.app
 
 # Lex compiled file
