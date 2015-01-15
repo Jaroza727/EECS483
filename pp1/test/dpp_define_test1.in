@@ -10,3 +10,7 @@
 "this is a good #NAME"
 "this is a bad #name"
 #NAMEisagoodname /* !! this one still requires clarification */
+
+// redefine NAME
+#define NAME new name
+This is my #NAME
