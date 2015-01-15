@@ -13,7 +13,22 @@
 
 "this is a good #NAME"
 "this is a bad #name"
-nameisagoodname
+name isagoodname
+
+*** Error line 13.
+*** Invalid # directive
+
+
+
+*** Error line 14.
+*** Invalid # directive
+
+
+
+*** Error line 15.
+*** Invalid # directive
+
+
 
 
 

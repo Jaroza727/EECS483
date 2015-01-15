@@ -21,7 +21,7 @@ ONELINE_COMMENT     \/\/.*
 MULTILINE_COMMENT   \/\*([^*]|[\r\n]|(\*+([^*\/]|[\r\n])))*\*+\/
 DEFINE              #define\ [A-Z]+\ .*
 DEFINED_VAR         #[A-Z]+
-HASH                #[^A-Z\n]*
+INVALID_HASH        #[^\n\t ]*
 NEWLINE             \n
 OTHER               .
 
@@ -61,7 +61,7 @@ OTHER               .
     }
 }
 
-{HASH} {
+{INVALID_HASH} {
     ReportError::InvalidDirective(linenum);
 }
 
