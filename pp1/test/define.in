@@ -1,0 +1,19 @@
+#jiaoshou
+#JIAOSHOU
+#defineJIAOSHOU 2333333
+#define JIAOSHOU 2333333
+#define   JIAO 23333333
+#define JIAO   23333333
+#define Jiaoshou 2333333
+#define jiaoshou 2333333
+string abc = "#JIAO";
+int aa = #JIAO;
+#define SHOU 			123
+#SHOU;
+#define JIAO 4567;
+#JIAO
+#define SHOU
+#define SHOU 
+#SHOU#SHOU#SHOU1;
+#define JIAO */
+/*1231313123123#JIAO*/
