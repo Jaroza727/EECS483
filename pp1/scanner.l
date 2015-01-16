@@ -106,17 +106,17 @@ false {
 }
 
 {DECIMAL} {
-    yylval.integerConstant = std::stoi(yytext);
+    yylval.integerConstant = std::stol(yytext);
     return T_IntConstant;
 }
 
 {HEXADECIMAL} {
-    yylval.integerConstant = std::stoi(yytext, nullptr, 16);
+    yylval.integerConstant = std::stol(yytext, nullptr, 16);
     return T_IntConstant;
 }
 
 {DOUBLE} {
-    yylval.doubleConstant = std::stod(yytext);
+    yylval.doubleConstant = std::stold(yytext);
     return T_DoubleConstant;
 }
 
