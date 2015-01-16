@@ -21,7 +21,7 @@ STRING              \"[^\"\n]*\"
 ONELINE_COMMENT     \/\/.*
 MULTILINE_COMMENT   \/\*([^*]|[\r\n]|(\*+([^*\/]|[\r\n])))*\*+\/
 UNTERM_COMMENT      \/\*([^*]|[\r\n]|(\*+([^*\/]|[\r\n])))*\**[^\/]?
-DEFINE              #define\ [A-Z]+\ .*
+DEFINE              #define\ .*
 DEFINED_VAR         #[A-Za-z]+
 INVALID_HASH        #[^A-Za-z]*
 NEWLINE             \n
@@ -47,11 +47,15 @@ OTHER               .
 {DEFINE} {
     size_t start = strlen("#define ");
     size_t end = start;
-    while (yytext[end] != ' ')
+    while (yytext[end] && 'A' <= yytext[end] && yytext[end] <= 'Z')
         end ++;
-    std::string key(yytext + start, end - start);
-    std::string value(yytext + end + 1, strlen(yytext) - end - 1);
-    defineTable[key] = value;
+    if (yytext[end] != ' ' || end == start) {
+        ReportError::InvalidDirective(linenum);
+    } else {
+        std::string key(yytext + start, end - start);
+        std::string value(yytext + end + 1, strlen(yytext) - end - 1);
+        defineTable[key] = value;
+    }
 }
 
 {DEFINED_VAR} {
