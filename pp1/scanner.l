@@ -68,6 +68,7 @@ DECIMAL     {DIGIT}+
 HEXADECIMAL 0(X|x){HEXDIGIT}+
 DOUBLE      {DIGIT}+"."{DIGIT}*((E|e)[+-]?{DIGIT}+)?
 STRING      \"[^\n\"]*(\"|\n)
+UTSTRING    \"[^\n\"]*
 /*"*/
 BOOLEAN 	true|false
 LETTER		[a-zA-Z]
@@ -133,6 +134,10 @@ false {
         yylval.stringConstant = yytext;
         return T_StringConstant;
     }
+}
+
+{UTSTRING} {
+    ReportError::UntermString(&yylloc, yytext);
 }
 
 {ID} {
