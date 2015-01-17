@@ -82,7 +82,7 @@ ID			{LETTER}({LETTER}|{DIGIT}|"_")*
 
 {TAB} {
     yylloc.last_column = yylloc.first_column;
-    yylloc.last_column += 8 - (yylloc.last_column % 8);
+    yylloc.last_column += 7 - ((yylloc.last_column - 1) % 8);
     yylloc.last_column += (strlen(yytext) - 1) * 8;
 }
 
