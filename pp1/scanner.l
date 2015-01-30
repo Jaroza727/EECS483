@@ -68,6 +68,7 @@ DECIMAL     {DIGIT}+
 HEXADECIMAL 0(X|x){HEXDIGIT}+
 DOUBLE      {DIGIT}+"."{DIGIT}*((E|e)[+-]?{DIGIT}+)?
 STRING      \"[^\n\"]*(\"|\n)
+UTSTRING    \"[^\n\"]*
 /*"*/
 BOOLEAN 	true|false
 LETTER		[a-zA-Z]
@@ -82,7 +83,7 @@ ID			{LETTER}({LETTER}|{DIGIT}|"_")*
 
 {TAB} {
     yylloc.last_column = yylloc.first_column;
-    yylloc.last_column += 8 - (yylloc.last_column % 8);
+    yylloc.last_column += 7 - ((yylloc.last_column - 1) % 8);
     yylloc.last_column += (strlen(yytext) - 1) * 8;
 }
 
@@ -106,17 +107,17 @@ false {
 }
 
 {DECIMAL} {
-    yylval.integerConstant = std::stoi(yytext);
+    yylval.integerConstant = std::stol(yytext);
     return T_IntConstant;
 }
 
 {HEXADECIMAL} {
-    yylval.integerConstant = std::stoi(yytext, nullptr, 16);
+    yylval.integerConstant = std::stol(yytext, nullptr, 16);
     return T_IntConstant;
 }
 
 {DOUBLE} {
-    yylval.doubleConstant = std::stod(yytext);
+    yylval.doubleConstant = std::stold(yytext);
     return T_DoubleConstant;
 }
 
@@ -133,6 +134,10 @@ false {
         yylval.stringConstant = yytext;
         return T_StringConstant;
     }
+}
+
+{UTSTRING} {
+    ReportError::UntermString(&yylloc, yytext);
 }
 
 {ID} {
