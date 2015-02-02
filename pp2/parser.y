@@ -139,6 +139,16 @@ void yyerror(const char *msg); // standard error-handling routine
 %type <declList>      PrototypeList
 %type <fnDecl>        Prototype
 
+%right    '='
+%left     T_Or
+%left     T_And
+%left     T_Equal T_NotEqual
+%left     '<' T_LessEqual '>' T_GreaterEqual
+%left     '+' '-'
+%left     '*' '/' '%'
+%nonassoc '!' '-'
+%left     '[' '.'
+
 %start Program
 
 %%
@@ -270,12 +280,12 @@ Stmt              :    ExprStmt             { $$ = $1; }
                   |    StmtBlock            { $$ = $1; }
                   ;
 
-StmtBlock         :    '{' VarDeclList StmtList '}'
+StmtBlock         :     '{' VarDeclList StmtList '}'
                                             { $$ = new StmtBlock($2, $3); }
                   ;
 
-VarDeclList       :    VarDeclList VarDecl  { ($$ = $1)->Append($2); }
-                  |    /*  empty  */        { $$ = new List<VarDecl*>; }
+VarDeclList       :     VarDeclList VarDecl { ($$ = $1)->Append($2); }
+                  |     /*  empty  */       { $$ = new List<VarDecl*>; }
                   ;
 
 Call              :     Expr '.' T_Identifier '(' Actuals ')'
@@ -387,17 +397,17 @@ Expr              :     LValue '=' Expr     {
                                             { $$ = new NewArrayExpr(@1, $3, $5); }
                   ;
 
-LValue            :     T_Identifier        { 
-                                              Identifier *ident = new Identifier(@1, $1);
-                                              $$ = new FieldAccess(NULL, ident); 
-                                            }
+LValue            :     Expr '[' Expr ']'
+                                            { $$ = new ArrayAccess(@1, $1, $3); }
                   |     Expr '.' T_Identifier
                                             { 
                                               Identifier *ident = new Identifier(@3, $3);
                                               $$ = new FieldAccess($1, ident); 
                                             }
-                  |     Expr '[' Expr ']'
-                                            { $$ = new ArrayAccess(@1, $1, $3); }
+                  |     T_Identifier        { 
+                                              Identifier *ident = new Identifier(@1, $1);
+                                              $$ = new FieldAccess(NULL, ident); 
+                                            }
                   ;
 
 Constant          :     T_IntConstant       { $$ = new IntConstant(@1, $1); }
