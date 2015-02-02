@@ -238,6 +238,16 @@ NonEmptyFormals   :    NonEmptyFormals ',' Variable
                   |    Variable             { ($$ = new List<VarDecl*>)->Append($1); }
                   ;
 
+Stmt              :    ExprStmt             { $$ = $1; }
+                  |    IfStmt               { $$ = $1; }
+                  |    WhileStmt            { $$ = $1; }
+                  |    ForStmt              { $$ = $1; }
+                  |    BreakStmt            { $$ = $1; }
+                  |    ReturnStmt           { $$ = $1; }
+                  |    PrintStmt            { $$ = $1; }
+                  |    StmtBlock            { $$ = $1; }
+                  ;
+
 StmtList          :    StmtList Stmt        { ($$ = $1)->Append($2); }
                   |    /*  empty  */        { $$ = new List<Stmt*>; }
                   ;
@@ -270,34 +280,12 @@ PrintStmt         :     T_Print '(' ExprList ')' ';'
                                             { $$ = new PrintStmt($3); }
                   ;
 
-Stmt              :    ExprStmt             { $$ = $1; }
-                  |    IfStmt               { $$ = $1; }
-                  |    WhileStmt            { $$ = $1; }
-                  |    ForStmt              { $$ = $1; }
-                  |    BreakStmt            { $$ = $1; }
-                  |    ReturnStmt           { $$ = $1; }
-                  |    PrintStmt            { $$ = $1; }
-                  |    StmtBlock            { $$ = $1; }
-                  ;
-
 StmtBlock         :     '{' VarDeclList StmtList '}'
                                             { $$ = new StmtBlock($2, $3); }
                   ;
 
 VarDeclList       :     VarDeclList VarDecl { ($$ = $1)->Append($2); }
                   |     /*  empty  */       { $$ = new List<VarDecl*>; }
-                  ;
-
-Call              :     Expr '.' T_Identifier '(' Actuals ')'
-                                            { 
-                                              Identifier *ident = new Identifier(@3, $3);
-                                              $$ = new Call(@1, $1, ident, $5); 
-                                            }
-                  |     T_Identifier '(' Actuals ')'
-                                            { 
-                                              Identifier *ident = new Identifier(@1, $1);
-                                              $$ = new Call(@1, NULL, ident, $3); 
-                                            }
                   ;
 
 Actuals           :     ExprList            { $$ = $1; }
@@ -395,6 +383,18 @@ Expr              :     LValue '=' Expr     {
                                             }
                   |     T_NewArray '(' Expr ',' Type ')'
                                             { $$ = new NewArrayExpr(@1, $3, $5); }
+                  ;
+
+Call              :     Expr '.' T_Identifier '(' Actuals ')'
+                                            { 
+                                              Identifier *ident = new Identifier(@3, $3);
+                                              $$ = new Call(@1, $1, ident, $5); 
+                                            }
+                  |     T_Identifier '(' Actuals ')'
+                                            { 
+                                              Identifier *ident = new Identifier(@1, $1);
+                                              $$ = new Call(@1, NULL, ident, $3); 
+                                            }
                   ;
 
 LValue            :     Expr '[' Expr ']'
