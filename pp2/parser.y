@@ -166,26 +166,26 @@ Decl              :    VarDecl              { $$ = $1; }
                   |    FnDecl               { $$ = $1; }
                   ;
 
-VarDecl           :    Variable ';'         { $$ = $1; }
-                  ;
-
-Variable          :    Type T_Identifier    { 
+ClassDecl         :     T_Class T_Identifier Extends Implements '{' FieldList '}'
+                                            { 
                                               Identifier *ident = new Identifier(@2, $2);
-                                              $$ = new VarDecl(ident, $1); 
+                                              $$ = new ClassDecl(ident, $3, $4, $6); 
                                             }
                   ;
 
-Type              :    T_Int                { $$ = Type::intType; }
-                  |    T_Double             { $$ = Type::doubleType; }
-                  |    T_Bool               { $$ = Type::boolType; }
-                  |    T_String             { $$ = Type::stringType; }
-                  |    T_Identifier         { 
-                                              Identifier *ident = new Identifier(@1, $1);
-                                              $$ = new NamedType(ident); 
+InterfaceDecl     :     T_Interface T_Identifier '{' PrototypeList '}'
+                                            { 
+                                              Identifier *ident = new Identifier(@2, $2);
+                                              $$ = new InterfaceDecl(ident, $4); 
                                             }
-                  |    Type '[' ']'         { 
-                                              $$ = new ArrayType(@1, $1); 
-                                            }
+                  ;
+
+FieldList         :     FieldList Field     { ($$ = $1)->Append($2); }
+                  |     /*  empty  */       { $$ = new List<Decl*>; }
+                  ;
+
+Field             :     VarDecl             { $$ = $1; }
+                  |     FnDecl              { $$ = $1; }
                   ;
 
 FnDecl            :    Type T_Identifier '(' Formals ')' StmtBlock 
@@ -202,35 +202,34 @@ FnDecl            :    Type T_Identifier '(' Formals ')' StmtBlock
                                             }
                   ;
 
+PrototypeList     :     PrototypeList Prototype
+                                            { ($$ = $1)->Append($2); }
+                  |     /*  empty  */       { $$ = new List<Decl*>; }
+                  ;
+
+Prototype         :     Type T_Identifier '(' Formals ')' ';'
+                                            { 
+                                              Identifier *ident = new Identifier(@2, $2);
+                                              $$ = new FnDecl(ident, $1, $4); 
+                                            }
+                  |     T_Void T_Identifier '(' Formals ')' ';'
+                                            { 
+                                              Identifier *ident = new Identifier(@2, $2);
+                                              $$ = new FnDecl(ident, Type::voidType, $4); 
+                                            }
+                  ;
+
 Formals           :    NonEmptyFormals      { $$ = $1; }
                   |    /*  empty  */        { $$ = new List<VarDecl*>; }
                   ;
 
-NonEmptyFormals   :    Variable             { ($$ = new List<VarDecl*>)->Append($1); }
-                  |    NonEmptyFormals ',' Variable
+NonEmptyFormals   :    NonEmptyFormals ',' Variable
                                             { ($$ = $1)->Append($3); }
-                  ;
-
-StmtBlock         :    '{' VarDeclList StmtList '}'
-                                            { $$ = new StmtBlock($2, $3); }
-                  ;
-
-VarDeclList       :    VarDeclList VarDecl  { ($$ = $1)->Append($2); }
-                  |    /*  empty  */        { $$ = new List<VarDecl*>; }
+                  |    Variable             { ($$ = new List<VarDecl*>)->Append($1); }
                   ;
 
 StmtList          :    StmtList Stmt        { ($$ = $1)->Append($2); }
                   |    /*  empty  */        { $$ = new List<Stmt*>; }
-                  ;
-
-Stmt              :    ExprStmt             { $$ = $1; }
-                  |    IfStmt               { $$ = $1; }
-                  |    WhileStmt            { $$ = $1; }
-                  |    ForStmt              { $$ = $1; }
-                  |    BreakStmt            { $$ = $1; }
-                  |    ReturnStmt           { $$ = $1; }
-                  |    PrintStmt            { $$ = $1; }
-                  |    StmtBlock            { $$ = $1; }
                   ;
 
 ExprStmt          :     ';'                 { $$ = new EmptyExpr; }
@@ -259,6 +258,40 @@ BreakStmt         :     T_Break ';'         { $$ = new BreakStmt(@1); }
 
 PrintStmt         :     T_Print '(' ExprList ')' ';'
                                             { $$ = new PrintStmt($3); }
+                  ;
+
+Stmt              :    ExprStmt             { $$ = $1; }
+                  |    IfStmt               { $$ = $1; }
+                  |    WhileStmt            { $$ = $1; }
+                  |    ForStmt              { $$ = $1; }
+                  |    BreakStmt            { $$ = $1; }
+                  |    ReturnStmt           { $$ = $1; }
+                  |    PrintStmt            { $$ = $1; }
+                  |    StmtBlock            { $$ = $1; }
+                  ;
+
+StmtBlock         :    '{' VarDeclList StmtList '}'
+                                            { $$ = new StmtBlock($2, $3); }
+                  ;
+
+VarDeclList       :    VarDeclList VarDecl  { ($$ = $1)->Append($2); }
+                  |    /*  empty  */        { $$ = new List<VarDecl*>; }
+                  ;
+
+Call              :     Expr '.' T_Identifier '(' Actuals ')'
+                                            { 
+                                              Identifier *ident = new Identifier(@3, $3);
+                                              $$ = new Call(@1, $1, ident, $5); 
+                                            }
+                  |     T_Identifier '(' Actuals ')'
+                                            { 
+                                              Identifier *ident = new Identifier(@1, $1);
+                                              $$ = new Call(@1, NULL, ident, $3); 
+                                            }
+                  ;
+
+Actuals           :     ExprList            { $$ = $1; }
+                  |                         { $$ = new List<Expr*>; }
                   ;
 
 ExprList          :     ExprList ',' Expr   { ($$ = $1)->Append($3); }
@@ -374,29 +407,6 @@ Constant          :     T_IntConstant       { $$ = new IntConstant(@1, $1); }
                   |     T_Null              { $$ = new NullConstant(@1); }
                   ;
 
-Call              :     Expr '.' T_Identifier '(' Actuals ')'
-                                            { 
-                                              Identifier *ident = new Identifier(@3, $3);
-                                              $$ = new Call(@1, $1, ident, $5); 
-                                            }
-                  |     T_Identifier '(' Actuals ')'
-                                            { 
-                                              Identifier *ident = new Identifier(@1, $1);
-                                              $$ = new Call(@1, NULL, ident, $3); 
-                                            }
-                  ;
-
-Actuals           :     ExprList            { $$ = $1; }
-                  |                         { $$ = new List<Expr*>; }
-                  ;
-
-ClassDecl         :     T_Class T_Identifier Extends Implements '{' FieldList '}'
-                                            { 
-                                              Identifier *ident = new Identifier(@2, $2);
-                                              $$ = new ClassDecl(ident, $3, $4, $6); 
-                                            }
-                  ;
-
 Extends           :     T_Extends T_Identifier          
                                             { 
                                               Identifier *ident = new Identifier(@2, $2);
@@ -423,35 +433,25 @@ IdentList         :     IdentList ',' T_Identifier
                                               ($$ = new List<NamedType*>)->Append(type);
                                             }
 
-FieldList         :     FieldList Field     { ($$ = $1)->Append($2); }
-                  |     /*  empty  */       { $$ = new List<Decl*>; }
+VarDecl           :    Variable ';'         { $$ = $1; }
                   ;
 
-Field             :     VarDecl             { $$ = $1; }
-                  |     FnDecl              { $$ = $1; }
-                  ;
-
-InterfaceDecl     :     T_Interface T_Identifier '{' PrototypeList '}'
-                                            { 
+Variable          :    Type T_Identifier    { 
                                               Identifier *ident = new Identifier(@2, $2);
-                                              $$ = new InterfaceDecl(ident, $4); 
+                                              $$ = new VarDecl(ident, $1); 
                                             }
                   ;
 
-PrototypeList     :     PrototypeList Prototype
-                                            { ($$ = $1)->Append($2); }
-                  |     /*  empty  */       { $$ = new List<Decl*>; }
-                  ;
-
-Prototype         :     Type T_Identifier '(' Formals ')' ';'
-                                            { 
-                                              Identifier *ident = new Identifier(@2, $2);
-                                              $$ = new FnDecl(ident, $1, $4); 
+Type              :    Type '[' ']'         { 
+                                              $$ = new ArrayType(@1, $1); 
                                             }
-                  |     T_Void T_Identifier '(' Formals ')' ';'
-                                            { 
-                                              Identifier *ident = new Identifier(@2, $2);
-                                              $$ = new FnDecl(ident, Type::voidType, $4); 
+                  |    T_Int                { $$ = Type::intType; }
+                  |    T_Double             { $$ = Type::doubleType; }
+                  |    T_Bool               { $$ = Type::boolType; }
+                  |    T_String             { $$ = Type::stringType; }
+                  |    T_Identifier         { 
+                                              Identifier *ident = new Identifier(@1, $1);
+                                              $$ = new NamedType(ident); 
                                             }
                   ;
 
@@ -480,4 +480,5 @@ void InitParser()
 {
    PrintDebug("parser", "Initializing parser");
    yydebug = true;
+   // yydebug = false;
 }
