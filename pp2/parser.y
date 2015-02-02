@@ -148,8 +148,9 @@ void yyerror(const char *msg); // standard error-handling routine
 %left     '*' '/' '%'
 %nonassoc '!'
 %left     '[' '.'
+
+%nonassoc P_Lower_than_else
 %nonassoc T_Else
-%nonassoc ';'
 
 %start Program
 
@@ -260,7 +261,7 @@ ExprStmt          :     ';'                 { $$ = new EmptyExpr; }
 
 IfStmt            :     T_If '(' Expr ')' Stmt T_Else Stmt
                                             { $$ = new IfStmt($3, $5, $7); }
-                  |     T_If '(' Expr ')' Stmt
+                  |     T_If '(' Expr ')' Stmt %prec P_Lower_than_else
                                             { $$ = new IfStmt($3, $5, NULL); }
                   ;
 
