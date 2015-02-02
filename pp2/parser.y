@@ -474,23 +474,8 @@ Variable          :    Type T_Identifier    {
                                             }
                   ;
 
-Type              :    T_Int T_Dims { 
-                                              $$ = new ArrayType(@1, Type::intType); 
-                                            }
-                  |    T_Double T_Dims { 
-                                              $$ = new ArrayType(@1, Type::doubleType); 
-                                            }
-                  |    T_Bool T_Dims { 
-                                              $$ = new ArrayType(@1, Type::boolType); 
-                                            }
-                  |    T_String T_Dims { 
-                                              $$ = new ArrayType(@1, Type::stringType); 
-                                            }
-                  |    T_Identifier T_Dims 
-                                            { 
-                                              Identifier *ident = new Identifier(@1, $1);
-                                              NamedType *type = new NamedType(ident); 
-                                              $$ = new ArrayType(@1, type); 
+Type              :    Type T_Dims          { 
+                                              $$ = new ArrayType(@1, $1); 
                                             }
                   |    T_Int                { $$ = Type::intType; }
                   |    T_Double             { $$ = Type::doubleType; }
