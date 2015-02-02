@@ -146,7 +146,7 @@ void yyerror(const char *msg); // standard error-handling routine
 %left     '<' T_LessEqual '>' T_GreaterEqual
 %left     '+' '-'
 %left     '*' '/' '%'
-%nonassoc '!' '-'
+%nonassoc '!'
 %left     '[' '.'
 
 %start Program
