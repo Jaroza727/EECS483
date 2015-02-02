@@ -148,6 +148,8 @@ void yyerror(const char *msg); // standard error-handling routine
 %left     '*' '/' '%'
 %nonassoc '!'
 %left     '[' '.'
+%nonassoc T_Else
+%nonassoc ';'
 
 %start Program
 
