@@ -138,6 +138,7 @@ void yyerror(const char *msg); // standard error-handling routine
 %type <decl>          Field
 %type <declList>      PrototypeList
 %type <fnDecl>        Prototype
+%type <boolConstant>  BracketPair
 
 %nonassoc '='
 %left     T_Or
@@ -147,15 +148,13 @@ void yyerror(const char *msg); // standard error-handling routine
 %left     '+' '-'
 %left     '*' '/' '%'
 %nonassoc '!'
-%left     '[' '.'
+%right P_NO_BRACKET
+%right     '[' '.'
+%right     ']'
 
 /* Prefer T_Else */
 %nonassoc P_IF_NO_ELSE
 %nonassoc T_Else
-
-/* Prefer StmtList */
-%nonassoc P_VAR_DECL_LIST
-%nonassoc P_STMT_BLOCK
 
 %start Program
 
@@ -174,7 +173,8 @@ Program           :    DeclList             {
                                             }
                   ;
 
-DeclList          :    DeclList Decl        { ($$ = $1)->Append($2); }
+DeclList          :    DeclList Decl        
+                                            { ($$ = $1)->Append($2); }
                   |    Decl                 { ($$ = new List<Decl*>)->Append($1); }
                   ;
 
@@ -256,9 +256,8 @@ Stmt              :    ExprStmt             { $$ = $1; }
                   |    StmtBlock            { $$ = $1; }
                   ;
 
-StmtList          :    StmtList Stmt
-                                            { ($$ = $1)->Append($2); }
-                  |    /*  empty  */        { $$ = new List<Stmt*>; }
+StmtList          :    StmtList Stmt        { ($$ = $1)->Append($2); }
+                  |    Stmt                 { ($$ = new List<Stmt*>)->Append($1); }
                   ;
 
 ExprStmt          :     ';'                 { $$ = new EmptyExpr; }
@@ -289,13 +288,21 @@ PrintStmt         :     T_Print '(' ExprList ')' ';'
                                             { $$ = new PrintStmt($3); }
                   ;
 
-StmtBlock         :     '{' VarDeclList %prec P_STMT_BLOCK StmtList '}'
+StmtBlock         :     '{' VarDeclList StmtList '}'
                                             { $$ = new StmtBlock($2, $3); }
+                  |     '{' VarDeclList '}'
+                                            { $$ = new StmtBlock($2, new List<Stmt*>); }
+                  |     '{' StmtList '}'
+                                            { $$ = new StmtBlock(new List<VarDecl**>, $2); }
+                  |     '{' '}'
+                                            { 
+                                              $$ = new StmtBlock(new List<VarDecl**>,
+                                                                 new List<Stmt*>); 
+                                            }
                   ;
 
-VarDeclList       :     VarDeclList %prec P_VAR_DECL_LIST VarDecl
-                                            { ($$ = $1)->Append($2); }
-                  |     /*  empty  */       { $$ = new List<VarDecl*>; }
+VarDeclList       :     VarDeclList VarDecl { ($$ = $1)->Append($2); }
+                  |     VarDecl             { ($$ = new List<VarDecl*>)->Append($1); }
                   ;
 
 Actuals           :     ExprList            { $$ = $1; }
@@ -414,7 +421,8 @@ LValue            :     Expr '[' Expr ']'
                                               Identifier *ident = new Identifier(@3, $3);
                                               $$ = new FieldAccess($1, ident); 
                                             }
-                  |     T_Identifier        { 
+                  |     T_Identifier %prec P_NO_BRACKET       
+                                            { 
                                               Identifier *ident = new Identifier(@1, $1);
                                               $$ = new FieldAccess(NULL, ident); 
                                             }
@@ -463,8 +471,23 @@ Variable          :    Type T_Identifier    {
                                             }
                   ;
 
-Type              :    Type '[' ']'         { 
-                                              $$ = new ArrayType(@1, $1); 
+Type              :    T_Int BracketPair    { 
+                                              $$ = new ArrayType(@1, Type::intType); 
+                                            }
+                  |    T_Double BracketPair { 
+                                              $$ = new ArrayType(@1, Type::doubleType); 
+                                            }
+                  |    T_Bool BracketPair   { 
+                                              $$ = new ArrayType(@1, Type::boolType); 
+                                            }
+                  |    T_String BracketPair { 
+                                              $$ = new ArrayType(@1, Type::stringType); 
+                                            }
+                  |    T_Identifier BracketPair     
+                                            { 
+                                              Identifier *ident = new Identifier(@1, $1);
+                                              type = new NamedType(ident); 
+                                              $$ = new ArrayType(@1, type); 
                                             }
                   |    T_Int                { $$ = Type::intType; }
                   |    T_Double             { $$ = Type::doubleType; }
@@ -474,6 +497,9 @@ Type              :    Type '[' ']'         {
                                               Identifier *ident = new Identifier(@1, $1);
                                               $$ = new NamedType(ident); 
                                             }
+                  ;
+
+BracketPair       :    '[' ']'              { $$ = true; }
                   ;
 
 %%
