@@ -138,7 +138,6 @@ void yyerror(const char *msg); // standard error-handling routine
 %type <decl>          Field
 %type <declList>      PrototypeList
 %type <fnDecl>        Prototype
-%type <boolConstant>  BracketPair
 
 %nonassoc '='
 %left     T_Or
@@ -274,7 +273,7 @@ WhileStmt         :     T_While '(' Expr ')' Stmt
                                             { $$ = new WhileStmt($3, $5); }
                   ;
 
-ForStmt           :     T_For '(' ExprStmt Expr ';' ExprStmt ')' Stmt
+ForStmt           :     T_For '(' ExprStmt Expr ';' Expr ')' Stmt
                                             { $$ = new ForStmt($3, $4, $6, $8); }
                   ;
 
@@ -293,10 +292,10 @@ StmtBlock         :     '{' VarDeclList StmtList '}'
                   |     '{' VarDeclList '}'
                                             { $$ = new StmtBlock($2, new List<Stmt*>); }
                   |     '{' StmtList '}'
-                                            { $$ = new StmtBlock(new List<VarDecl**>, $2); }
+                                            { $$ = new StmtBlock(new List<VarDecl*>, $2); }
                   |     '{' '}'
                                             { 
-                                              $$ = new StmtBlock(new List<VarDecl**>,
+                                              $$ = new StmtBlock(new List<VarDecl*>,
                                                                  new List<Stmt*>); 
                                             }
                   ;
@@ -332,6 +331,10 @@ Expr              :     LValue '=' Expr     {
                                             }
                   |     Expr '*' Expr       { 
                                               Operator *op = new Operator(@2, "*");
+                                              $$ = new ArithmeticExpr($1, op, $3);
+                                            }
+                  |     Expr '/' Expr       { 
+                                              Operator *op = new Operator(@2, "/");
                                               $$ = new ArithmeticExpr($1, op, $3);
                                             }
                   |     Expr '%' Expr       { 
@@ -471,22 +474,22 @@ Variable          :    Type T_Identifier    {
                                             }
                   ;
 
-Type              :    T_Int BracketPair    { 
+Type              :    T_Int T_Dims { 
                                               $$ = new ArrayType(@1, Type::intType); 
                                             }
-                  |    T_Double BracketPair { 
+                  |    T_Double T_Dims { 
                                               $$ = new ArrayType(@1, Type::doubleType); 
                                             }
-                  |    T_Bool BracketPair   { 
+                  |    T_Bool T_Dims { 
                                               $$ = new ArrayType(@1, Type::boolType); 
                                             }
-                  |    T_String BracketPair { 
+                  |    T_String T_Dims { 
                                               $$ = new ArrayType(@1, Type::stringType); 
                                             }
-                  |    T_Identifier BracketPair     
+                  |    T_Identifier T_Dims 
                                             { 
                                               Identifier *ident = new Identifier(@1, $1);
-                                              type = new NamedType(ident); 
+                                              NamedType *type = new NamedType(ident); 
                                               $$ = new ArrayType(@1, type); 
                                             }
                   |    T_Int                { $$ = Type::intType; }
@@ -497,9 +500,6 @@ Type              :    T_Int BracketPair    {
                                               Identifier *ident = new Identifier(@1, $1);
                                               $$ = new NamedType(ident); 
                                             }
-                  ;
-
-BracketPair       :    '[' ']'              { $$ = true; }
                   ;
 
 %%
@@ -527,5 +527,5 @@ void InitParser()
 {
    PrintDebug("parser", "Initializing parser");
    yydebug = true;
-   // yydebug = false;
+   yydebug = false;
 }
