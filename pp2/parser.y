@@ -149,8 +149,13 @@ void yyerror(const char *msg); // standard error-handling routine
 %nonassoc '!'
 %left     '[' '.'
 
-%nonassoc P_Lower_than_else
+/* Prefer T_Else */
+%nonassoc P_IF_NO_ELSE
 %nonassoc T_Else
+
+/* Prefer StmtList */
+%nonassoc P_VAR_DECL
+%nonassoc P_STMT_LIST
 
 %start Program
 
@@ -251,7 +256,8 @@ Stmt              :    ExprStmt             { $$ = $1; }
                   |    StmtBlock            { $$ = $1; }
                   ;
 
-StmtList          :    StmtList Stmt        { ($$ = $1)->Append($2); }
+StmtList          :    StmtList Stmt %prec P_STMT_LIST
+                                            { ($$ = $1)->Append($2); }
                   |    /*  empty  */        { $$ = new List<Stmt*>; }
                   ;
 
@@ -261,7 +267,7 @@ ExprStmt          :     ';'                 { $$ = new EmptyExpr; }
 
 IfStmt            :     T_If '(' Expr ')' Stmt T_Else Stmt
                                             { $$ = new IfStmt($3, $5, $7); }
-                  |     T_If '(' Expr ')' Stmt %prec P_Lower_than_else
+                  |     T_If '(' Expr ')' Stmt %prec P_IF_NO_ELSE
                                             { $$ = new IfStmt($3, $5, NULL); }
                   ;
 
@@ -446,7 +452,8 @@ IdentList         :     IdentList ',' T_Identifier
                                               ($$ = new List<NamedType*>)->Append(type);
                                             }
 
-VarDecl           :    Variable ';'         { $$ = $1; }
+VarDecl           :    Variable ';' %prec P_VAR_DECL
+                                            { $$ = $1; }
                   ;
 
 Variable          :    Type T_Identifier    { 
