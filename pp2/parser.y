@@ -139,11 +139,11 @@ void yyerror(const char *msg); // standard error-handling routine
 %type <declList>      PrototypeList
 %type <fnDecl>        Prototype
 
-%right    '='
+%nonassoc '='
 %left     T_Or
 %left     T_And
-%left     T_Equal T_NotEqual
-%left     '<' T_LessEqual '>' T_GreaterEqual
+%nonassoc T_Equal T_NotEqual
+%nonassoc '<' T_LessEqual '>' T_GreaterEqual
 %left     '+' '-'
 %left     '*' '/' '%'
 %nonassoc '!'
