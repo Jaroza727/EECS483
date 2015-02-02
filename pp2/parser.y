@@ -154,8 +154,8 @@ void yyerror(const char *msg); // standard error-handling routine
 %nonassoc T_Else
 
 /* Prefer StmtList */
-%nonassoc P_VAR_DECL
-%nonassoc P_STMT_LIST
+%nonassoc P_VAR_DECL_LIST
+%nonassoc P_STMT_BLOCK
 
 %start Program
 
@@ -256,7 +256,7 @@ Stmt              :    ExprStmt             { $$ = $1; }
                   |    StmtBlock            { $$ = $1; }
                   ;
 
-StmtList          :    StmtList Stmt %prec P_STMT_LIST
+StmtList          :    StmtList Stmt
                                             { ($$ = $1)->Append($2); }
                   |    /*  empty  */        { $$ = new List<Stmt*>; }
                   ;
@@ -289,11 +289,12 @@ PrintStmt         :     T_Print '(' ExprList ')' ';'
                                             { $$ = new PrintStmt($3); }
                   ;
 
-StmtBlock         :     '{' VarDeclList StmtList '}'
+StmtBlock         :     '{' VarDeclList %prec P_STMT_BLOCK StmtList '}'
                                             { $$ = new StmtBlock($2, $3); }
                   ;
 
-VarDeclList       :     VarDeclList VarDecl { ($$ = $1)->Append($2); }
+VarDeclList       :     VarDeclList %prec P_VAR_DECL_LIST VarDecl
+                                            { ($$ = $1)->Append($2); }
                   |     /*  empty  */       { $$ = new List<VarDecl*>; }
                   ;
 
@@ -452,7 +453,7 @@ IdentList         :     IdentList ',' T_Identifier
                                               ($$ = new List<NamedType*>)->Append(type);
                                             }
 
-VarDecl           :    Variable ';' %prec P_VAR_DECL
+VarDecl           :    Variable ';'
                                             { $$ = $1; }
                   ;
 
