@@ -1,8 +1,0 @@
-"legitimate string"
-"string in multiple line
-"
-"""" // many quotes
-"string with number 123 456 123.456 .123 0.123 12.E12"
-
-// This is not mentioned any where
-'single quotes'
