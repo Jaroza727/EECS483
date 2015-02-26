@@ -14,7 +14,12 @@ Program::Program(List<Decl*> *d) {
 }
 
 void Program::Check() {
-    
+    symbolTable = new Hashtable<Decl*>;
+    for (int i = 0; i < decls->NumElements(); ++i)
+    {
+        decls->Nth(i)->Check();
+    }
+    delete symbolTable;
 }
 
 StmtBlock::StmtBlock(List<VarDecl*> *d, List<Stmt*> *s) {

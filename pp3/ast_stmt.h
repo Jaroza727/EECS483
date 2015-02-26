@@ -13,6 +13,7 @@
 #ifndef _H_ast_stmt
 #define _H_ast_stmt
 
+#include "hashtable.h"
 #include "list.h"
 #include "ast.h"
 
@@ -24,6 +25,7 @@ class Program : public Node
 {
   protected:
      List<Decl*> *decls;
+     Hashtable<Decl*> *symbolTable;
      
   public:
      Program(List<Decl*> *declList);
