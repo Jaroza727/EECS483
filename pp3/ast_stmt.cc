@@ -17,7 +17,9 @@ void Program::Check() {
     symbolTable = new Hashtable<Decl*>;
     for (int i = 0; i < decls->NumElements(); ++i)
     {
-        decls->Nth(i)->Check();
+        Decl* decl = decls->Nth(i);
+        decl->Check();
+        symbolTable->Enter(decl->getName(), (VarDecl*)decl);
     }
     delete symbolTable;
 }
