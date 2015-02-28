@@ -17,6 +17,16 @@ Node::Node() {
     location = NULL;
     parent = NULL;
 }
+
+void Node::insertToTable(Node *p)
+{
+	symbolTable->Enter(p->getName(), p);
+}
+
+Node *Node::queryTable(char *key)
+{
+	return symbolTable->Lookup(key);
+}
 	 
 Identifier::Identifier(yyltype loc, const char *n) : Node(loc) {
     name = strdup(n);

@@ -31,6 +31,7 @@
 
 #include <stdlib.h>   // for NULL
 #include "location.h"
+#include "hashtable.h"
 #include <iostream>
 
 class Node 
@@ -38,6 +39,7 @@ class Node
   protected:
     yyltype *location;
     Node *parent;
+    Hashtable<Node*> *symbolTable;
 
   public:
     Node(yyltype loc);
@@ -47,6 +49,9 @@ class Node
     void SetParent(Node *p)  { parent = p; }
     Node *GetParent()        { return parent; }
     virtual void Check()     {}
+    virtual char *getName()  { return nullptr; }
+    void insertToTable(Node *p);
+    Node *queryTable(char *key);
 };
    
 

@@ -55,6 +55,7 @@ class ClassDecl : public Decl
     ClassDecl(Identifier *name, NamedType *extends, 
               List<NamedType*> *implements, List<Decl*> *members);
     int declType() { return 1; };
+    void Check();
 };
 
 class InterfaceDecl : public Decl 
@@ -65,6 +66,7 @@ class InterfaceDecl : public Decl
   public:
     InterfaceDecl(Identifier *name, List<Decl*> *members);
     int declType() { return 2; };
+    void Check();
 };
 
 class FnDecl : public Decl 
@@ -78,6 +80,7 @@ class FnDecl : public Decl
     FnDecl(Identifier *name, Type *returnType, List<VarDecl*> *formals);
     void SetFunctionBody(Stmt *b);
     int declType() { return 3; };
+    void Check();
 };
 
 #endif

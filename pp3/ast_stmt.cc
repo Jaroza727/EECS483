@@ -14,13 +14,12 @@ Program::Program(List<Decl*> *d) {
 }
 
 void Program::Check() {
-    symbolTable = new Hashtable<Decl*>;
+    symbolTable = new Hashtable<Node*>;
     for (int i = 0; i < decls->NumElements(); ++i)
     {
-        Decl* decl = decls->Nth(i);
-        decl->Check();
-        symbolTable->Enter(decl->getName(), (VarDecl*)decl);
+        decls->Nth(i)->Check();
     }
+    printf("%d\n", symbolTable->NumEntries());
     delete symbolTable;
 }
 
