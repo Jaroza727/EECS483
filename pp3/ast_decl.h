@@ -20,6 +20,8 @@
 class Identifier;
 class Stmt;
 
+enum class DeclType { VAR_DECL, CLASS_DECL, INTERFACE_DECL, FN_DECL };
+
 class Decl : public Node 
 {
   protected:
@@ -40,7 +42,7 @@ class VarDecl : public Decl
     
   public:
     VarDecl(Identifier *name, Type *type);
-    int declType() { return 0; }
+    DeclType getDeclType() { return DeclType::VAR_DECL; }
     void Check();
 };
 
@@ -54,7 +56,7 @@ class ClassDecl : public Decl
   public:
     ClassDecl(Identifier *name, NamedType *extends, 
               List<NamedType*> *implements, List<Decl*> *members);
-    int declType() { return 1; };
+    DeclType getDeclType() { return DeclType::CLASS_DECL; }
     void Check();
 };
 
@@ -65,7 +67,7 @@ class InterfaceDecl : public Decl
     
   public:
     InterfaceDecl(Identifier *name, List<Decl*> *members);
-    int declType() { return 2; };
+    DeclType getDeclType() { return DeclType::INTERFACE_DECL; }
     void Check();
 };
 
@@ -79,7 +81,7 @@ class FnDecl : public Decl
   public:
     FnDecl(Identifier *name, Type *returnType, List<VarDecl*> *formals);
     void SetFunctionBody(Stmt *b);
-    int declType() { return 3; };
+    DeclType getDeclType() { return DeclType::FN_DECL; }
     void Check();
 };
 
