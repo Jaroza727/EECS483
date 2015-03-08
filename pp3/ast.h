@@ -48,7 +48,7 @@ class Node
     yyltype *GetLocation()   { return location; }
     void SetParent(Node *p)  { parent = p; }
     Node *GetParent()        { return parent; }
-    virtual void Check()     {}
+    virtual void Check()     { parent->insertToTable(this); }
     virtual char *getName()  { return nullptr; }
     void insertToTable(Node *p);
     Node *queryTable(char *key);

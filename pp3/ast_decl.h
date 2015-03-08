@@ -30,8 +30,7 @@ class Decl : public Node
   public:
     Decl(Identifier *name);
     friend std::ostream& operator<<(std::ostream& out, Decl *d) { return out << d->id; }
-    virtual int declType() = 0;
-    virtual void Check() {};
+    virtual DeclType getDeclType() = 0;
     char *getName() { return id->getName(); };
 };
 
@@ -43,7 +42,6 @@ class VarDecl : public Decl
   public:
     VarDecl(Identifier *name, Type *type);
     DeclType getDeclType() { return DeclType::VAR_DECL; }
-    void Check();
 };
 
 class ClassDecl : public Decl 
@@ -57,7 +55,6 @@ class ClassDecl : public Decl
     ClassDecl(Identifier *name, NamedType *extends, 
               List<NamedType*> *implements, List<Decl*> *members);
     DeclType getDeclType() { return DeclType::CLASS_DECL; }
-    void Check();
 };
 
 class InterfaceDecl : public Decl 
@@ -68,7 +65,6 @@ class InterfaceDecl : public Decl
   public:
     InterfaceDecl(Identifier *name, List<Decl*> *members);
     DeclType getDeclType() { return DeclType::INTERFACE_DECL; }
-    void Check();
 };
 
 class FnDecl : public Decl 
@@ -82,7 +78,6 @@ class FnDecl : public Decl
     FnDecl(Identifier *name, Type *returnType, List<VarDecl*> *formals);
     void SetFunctionBody(Stmt *b);
     DeclType getDeclType() { return DeclType::FN_DECL; }
-    void Check();
 };
 
 #endif

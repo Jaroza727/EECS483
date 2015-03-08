@@ -18,14 +18,9 @@ VarDecl::VarDecl(Identifier *n, Type *t) : Decl(n) {
     (type=t)->SetParent(this);
 }
 
-void VarDecl::Check() {
-    /*if (type != Type::intType && type != Type::doubleType && 
-        type != Type::boolType && type != Type::stringType)
-    {
-        printf("123");
-    }*/
-    parent->insertToTable(this);
-}
+// void VarDecl::Check() {
+//     parent->insertToTable(this);
+// }
 
 ClassDecl::ClassDecl(Identifier *n, NamedType *ex, List<NamedType*> *imp, List<Decl*> *m) : Decl(n) {
     // extends can be NULL, impl & mem may be empty lists but cannot be NULL
@@ -36,18 +31,18 @@ ClassDecl::ClassDecl(Identifier *n, NamedType *ex, List<NamedType*> *imp, List<D
     (members=m)->SetParentAll(this);
 }
 
-void ClassDecl::Check() {
-    parent->insertToTable(this);
-}
+// void ClassDecl::Check() {
+//     parent->insertToTable(this);
+// }
 
 InterfaceDecl::InterfaceDecl(Identifier *n, List<Decl*> *m) : Decl(n) {
     Assert(n != NULL && m != NULL);
     (members=m)->SetParentAll(this);
 }
 
-void InterfaceDecl::Check() {
-    parent->insertToTable(this);
-}
+// void InterfaceDecl::Check() {
+//     parent->insertToTable(this);
+// }
 	
 FnDecl::FnDecl(Identifier *n, Type *r, List<VarDecl*> *d) : Decl(n) {
     Assert(n != NULL && r!= NULL && d != NULL);
@@ -60,6 +55,6 @@ void FnDecl::SetFunctionBody(Stmt *b) {
     (body=b)->SetParent(this);
 }
 
-void FnDecl::Check() {
-    parent->insertToTable(this);
-}
+// void FnDecl::Check() {
+//     parent->insertToTable(this);
+// }
