@@ -34,6 +34,8 @@
 #include <iostream>
 class CodeGenerator;
 
+extern CodeGenerator g_codeGenerator_ptr; // global CodeGenerator object
+
 class Node 
 {
   protected:
@@ -47,6 +49,7 @@ class Node
     yyltype *GetLocation()   { return location; }
     void SetParent(Node *p)  { parent = p; }
     Node *GetParent()        { return parent; }
+    virtual void Emit() {};
 };
    
 

@@ -28,7 +28,7 @@ class Program : public Node
   public:
      Program(List<Decl*> *declList);
      void Check();
-     void Emit();
+     void Emit() override;
 };
 
 class Stmt : public Node

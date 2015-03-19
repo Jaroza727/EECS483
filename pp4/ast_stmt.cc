@@ -6,6 +6,7 @@
 #include "ast_type.h"
 #include "ast_decl.h"
 #include "ast_expr.h"
+#include "codegen.h"
 
 
 Program::Program(List<Decl*> *d) {
@@ -19,14 +20,14 @@ void Program::Check() {
      * semantically-invalid programs.
      */
 }
+
+// Entry point for project 4 code generation
 void Program::Emit() {
-    /* pp4: here is where the code generation is kicked off.
-     *      The general idea is perform a tree traversal of the
-     *      entire program, generating instructions as you go.
-     *      Each node can have its own way of translating itself,
-     *      which makes for a great use of inheritance and
-     *      polymorphism in the node classes.
-     */
+    g_codeGenerator_ptr = new CodeGenerator;
+    for (int i = 0; i < decls->NumElements(); ++i)
+        decls->Nth(i)->Emit();
+    g_codeGenerator_ptr->DoFinalCodeGen();
+    delete g_codeGenerator_ptr;
 }
 
 StmtBlock::StmtBlock(List<VarDecl*> *d, List<Stmt*> *s) {
