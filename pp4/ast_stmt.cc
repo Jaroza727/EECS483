@@ -2,11 +2,12 @@
  * -----------------
  * Implementation of statement node classes.
  */
+#include "ast.h"
 #include "ast_stmt.h"
 #include "ast_type.h"
 #include "ast_decl.h"
 #include "ast_expr.h"
-#include "codegen.h"
+#include <cassert>
 
 
 Program::Program(List<Decl*> *d) {
@@ -15,19 +16,26 @@ Program::Program(List<Decl*> *d) {
 }
 
 void Program::Check() {
-    /* You can use your pp3 semantic analysis or leave it out if
-     * you want to avoid the clutter.  We won't test pp4 against 
-     * semantically-invalid programs.
-     */
+    for (int i = 0; i < decls->NumElements(); ++i)
+    {
+        Decl *decl = decls->Nth(i), *prev = Insert(decl);
+        if (decl != prev) ReportError::DeclConflict(decl, prev);
+    }
+    for (int i = 0; i < decls->NumElements(); ++i) decls->Nth(i)->Check();
 }
 
-// Entry point for project 4 code generation
 void Program::Emit() {
-    g_codeGenerator_ptr = new CodeGenerator;
-    for (int i = 0; i < decls->NumElements(); ++i)
-        decls->Nth(i)->Emit();
-    g_codeGenerator_ptr->DoFinalCodeGen();
-    delete g_codeGenerator_ptr;
+    g_code_generator_ptr = new CodeGenerator;
+    for (int i = 0; i < decls->NumElements(); ++i) {
+        if (auto decl = dynamic_cast<VarDecl*>(decls->Nth(i))) {
+            decl->GenGlobalCode();
+            decl->GetLocation()->Print();
+        } else {
+            decls->Nth(i)->GenCode();
+        }
+    }
+    g_code_generator_ptr->DoFinalCodeGen();
+    delete g_code_generator_ptr;
 }
 
 StmtBlock::StmtBlock(List<VarDecl*> *d, List<Stmt*> *s) {
@@ -65,4 +73,121 @@ PrintStmt::PrintStmt(List<Expr*> *a) {
     (args=a)->SetParentAll(this);
 }
 
+void StmtBlock::Check()
+{
+    for (int i = 0; i < decls->NumElements(); ++i)
+    {
+        Decl *decl = decls->Nth(i), *prev = Insert(decl);
+        decl->Check();
+        if (decl != prev) ReportError::DeclConflict(decl, prev);
+    }
+    for (int i = 0; i < stmts->NumElements(); ++i) stmts->Nth(i)->Check();
+}
 
+Location *StmtBlock::GenCode() {
+    for (int i = 0; i < decls->NumElements(); ++i) {
+        decls->Nth(i)->GenCode();
+        decls->Nth(i)->GetLocation()->Print();
+    }
+    for (int i = 0; i < stmts->NumElements(); ++i) stmts->Nth(i)->GenCode();
+    return nullptr;
+}
+
+void ConditionalStmt::Check()
+{
+    test->Check();
+    body->Check();
+    if (!test->GetType()->IsEquivalentTo(Type::boolType)) ReportError::TestNotBoolean(test);
+}
+
+Location *WhileStmt::GenCode()
+{
+    auto startLabel = g_code_generator_ptr->NewLabel();
+    endLabel = g_code_generator_ptr->NewLabel();
+
+    g_code_generator_ptr->GenLabel(startLabel);
+    auto testResult = test->GenCode();
+    g_code_generator_ptr->GenIfZ(testResult, endLabel);
+    body->GenCode();
+    g_code_generator_ptr->GenGoto(startLabel);
+    g_code_generator_ptr->GenLabel(endLabel);
+    return nullptr;
+}
+
+void ForStmt::Check()
+{
+    ConditionalStmt::Check();
+    init->Check();
+    step->Check();
+}
+
+Location *ForStmt::GenCode()
+{
+    auto startLabel = g_code_generator_ptr->NewLabel();
+    endLabel = g_code_generator_ptr->NewLabel();
+
+    init->GenCode();
+    g_code_generator_ptr->GenLabel(startLabel);
+    auto testResult = test->GenCode();
+    g_code_generator_ptr->GenIfZ(testResult, endLabel);
+    body->GenCode();
+    step->GenCode();
+    g_code_generator_ptr->GenGoto(startLabel);
+    g_code_generator_ptr->GenLabel(endLabel);
+    return nullptr;
+}
+
+void IfStmt::Check()
+{
+    ConditionalStmt::Check();
+    if (elseBody) elseBody->Check();
+}
+
+Location *IfStmt::GenCode()
+{
+    auto elseLabel = g_code_generator_ptr->NewLabel();
+    auto testResult = test->GenCode();
+    g_code_generator_ptr->GenIfZ(testResult, elseLabel);
+    body->GenCode();
+    g_code_generator_ptr->GenLabel(elseLabel);
+    if (elseBody) elseBody->GenCode();
+    return nullptr;
+}
+
+void BreakStmt::Check()
+{
+    Node *p = this;
+    while (p && p->GetNode() != tNode::LoopStmtT) p = p->GetParent();
+    if (!p) ReportError::BreakOutsideLoop(this);
+}
+
+Location *BreakStmt::GenCode()
+{
+    Node *p = this;
+    while (p && p->GetNode() != tNode::LoopStmtT) p = p->GetParent();
+    assert(p);
+    auto endLabel = dynamic_cast<LoopStmt*>(p)->getEndLabel();
+    assert(endLabel);
+    g_code_generator_ptr->GenGoto(endLabel);
+    return nullptr;
+}
+
+void ReturnStmt::Check()
+{
+    expr->Check();
+    Node *p = this;
+    while (p->GetNode() != tNode::FnDeclT) p = p->GetParent();
+    Type *expect = ((FnDecl*)p)->GetType(), *given = expr->GetType();
+    if (!given->IsCompatibleWith(expect)) ReportError::ReturnMismatch(this, given, expect);
+}
+
+void PrintStmt::Check()
+{
+    for (int i = 0; i < args->NumElements(); ++i) args->Nth(i)->Check();
+    for (int i = 0; i < args->NumElements(); ++i)
+    {
+        Type *type = args->Nth(i)->GetType();
+        if (!type->IsEquivalentTo(Type::intType) && !type->IsEquivalentTo(Type::boolType) && !type->IsEquivalentTo(Type::stringType))
+            ReportError::PrintArgMismatch(args->Nth(i), i + 1, type);
+    }
+}

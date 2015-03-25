@@ -26,10 +26,7 @@ Type::Type(const char *n) {
     Assert(n);
     typeName = strdup(n);
 }
-
-
-
-	
+    
 NamedType::NamedType(Identifier *i) : Type(*i->GetLocation()) {
     Assert(i != NULL);
     (id=i)->SetParent(this);
@@ -41,4 +38,59 @@ ArrayType::ArrayType(yyltype loc, Type *et) : Type(loc) {
     (elemType=et)->SetParent(this);
 }
 
+void NamedType::Check()
+{
+    Decl *decl = GetRoot()->Lookup(id);
+    tNode tnode = decl ? decl->GetNode() : tNode::NodeT;
+    if (tnode != tNode::ClassDeclT && tnode != tNode::InterfaceDeclT)
+        ReportError::IdentifierNotDeclared(id, reasonT::LookingForType);
+}
 
+void NamedType::CheckClass()
+{
+    Decl *decl = GetRoot()->Lookup(id);
+    tNode tnode = decl ? decl->GetNode() : tNode::NodeT;
+    if (tnode != tNode::ClassDeclT) ReportError::IdentifierNotDeclared(id, reasonT::LookingForClass);
+}
+
+void ArrayType::Check()
+{
+    elemType->Check();
+}
+
+bool Type::IsEquivalentTo(Type *other)
+{
+    return this == other || this == Type::errorType || other == Type::errorType;
+}
+
+bool Type::IsCompatibleWith(Type *other)
+{
+    return IsEquivalentTo(other) || (this == Type::nullType && other->GetNode() == tNode::NamedTypeT);
+}
+
+bool NamedType::IsEquivalentTo(Type *other)
+{
+    return other->GetNode() == tNode::NamedTypeT && !strcmp(((NamedType*)other)->id->GetName(), id->GetName());
+}
+
+bool NamedType::IsCompatibleWith(Type *other)
+{
+    if (IsEquivalentTo(other)) return true;
+    Decl *decl = GetRoot()->Lookup(id);
+    if (!decl || decl->GetNode() != tNode::ClassDeclT) return false;
+    ClassDecl *classDecl = (ClassDecl*)decl;
+    NamedType *extends = classDecl->GetExtends();
+    List<NamedType*> *impls = classDecl->GetImpls();
+    for (int i = 0; i < impls->NumElements(); ++i) if (impls->Nth(i)->IsEquivalentTo(other)) return true;
+    return extends && extends->IsCompatibleWith(other);
+}
+
+bool ArrayType::IsEquivalentTo(Type *other)
+{
+    return other->GetNode() == tNode::ArrayTypeT && elemType->IsEquivalentTo(((ArrayType*)other)->elemType);
+}
+
+bool ArrayType::IsCompatibleWith(Type *other)
+{
+    return IsEquivalentTo(other);
+}

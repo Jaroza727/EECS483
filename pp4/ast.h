@@ -19,10 +19,10 @@
  * set up links in both directions. The parent link is typically not used 
  * during parsing, but is more important in later phases.
  *
- * Code generation: For pp4 you are adding "Emit" behavior to the ast
- * node classes. Your code generator should do an postorder walk on the
- * parse tree, and when visiting each node, emitting the necessary 
- * instructions for that construct.
+ * Semantic analysis: For pp3 you are adding "Check" behavior to the ast
+ * node classes. Your semantic analyzer should do an inorder walk on the
+ * parse tree, and when visiting each node, verify the particular
+ * semantic rules that apply to that construct.
 
  */
 
@@ -31,16 +31,25 @@
 
 #include <stdlib.h>   // for NULL
 #include "location.h"
+#include "hashtable.h"
+#include "errors.h"
+#include "tac.h"
+#include "codegen.h"
 #include <iostream>
-class CodeGenerator;
 
-extern CodeGenerator g_codeGenerator_ptr; // global CodeGenerator object
+typedef enum {NodeT, NamedTypeT, ArrayTypeT, VarDeclT, ClassDeclT, InterfaceDeclT, FnDeclT, LoopStmtT, ThisT} tNode;
+
+class Decl;
+class Identifier;
+
+extern CodeGenerator *g_code_generator_ptr;
 
 class Node 
 {
   protected:
     yyltype *location;
     Node *parent;
+    Hashtable<Decl*> table;
 
   public:
     Node(yyltype loc);
@@ -49,7 +58,12 @@ class Node
     yyltype *GetLocation()   { return location; }
     void SetParent(Node *p)  { parent = p; }
     Node *GetParent()        { return parent; }
-    virtual void Emit() {};
+    Node *GetRoot();
+    Decl *Insert(Decl *decl, bool override = false);
+    Decl *Lookup(Identifier *id);
+    virtual void Check()     {}
+    virtual tNode GetNode()  { return tNode::NodeT; }
+    virtual Location *GenCode() { return nullptr; }
 };
    
 
@@ -61,6 +75,7 @@ class Identifier : public Node
   public:
     Identifier(yyltype loc, const char *name);
     friend std::ostream& operator<<(std::ostream& out, Identifier *id) { return out << id->name; }
+    const char *GetName() { return name; }
 };
 
 

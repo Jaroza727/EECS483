@@ -6,9 +6,12 @@
  */
 
 #include "codegen.h"
-#include <string.h>
 #include "tac.h"
 #include "mips.h"
+
+#include <cassert>
+#include <string.h>
+
   
 CodeGenerator::CodeGenerator()
 {
@@ -28,14 +31,26 @@ Location *CodeGenerator::GenTempVariable()
 {
   static int nextTempNum;
   char temp[10];
-  Location *result = NULL;
   sprintf(temp, "_tmp%d", nextTempNum++);
-  /* pp4: need to create variable in proper location
-     in stack frame for use as temporary. Until you
-     do that, the assert below will always fail to remind
-     you this needs to be implemented  */
-  Assert(result != NULL);
+  return GenLocalVariable(temp);
+}
+
+Location *CodeGenerator::GenLocalVariable(const char* name)
+{
+  Location *result = new Location(Segment::fpRelative, OffsetToLocal, name);
+  OffsetToLocal -= VarSize;
   return result;
+}
+
+Location *CodeGenerator::GenGlobalVariable(const char* name)
+{
+  Location *result = new Location(Segment::gpRelative, OffsetToGlobal, name);
+  OffsetToGlobal += VarSize;
+  return result;
+}
+
+int CodeGenerator::GetFrameSize() {
+  return OffsetToFirstLocal - OffsetToLocal;
 }
 
  
@@ -79,6 +94,33 @@ void CodeGenerator::GenStore(Location *dst,Location *src, int offset)
   code->Append(new Store(dst, src, offset));
 }
 
+Location *CodeGenerator::GenOperation(const char *opName, Location *op1,
+                                      Location *op2)
+{
+  if (!strcmp(opName, "-") && !op1) {
+    return GenBinaryOp("-", GenLoadConstant(0), op2);
+  } else if (!strcmp(opName, "!") && !op1) {
+    return GenBinaryOp("==", GenLoadConstant(0), op2);
+  } else if (!strcmp(opName, ">")) {
+    return GenBinaryOp("<", op2, op1);
+  } else if (!strcmp(opName, "<=")) {
+    return GenBinaryOp("||", GenOperation("<", op1, op2), GenOperation("==", op1, op2));
+  } else if (!strcmp(opName, ">=")) {
+    return GenBinaryOp("||", GenOperation(">", op1, op2), GenOperation("==", op1, op2));
+  } else if (!strcmp(opName, "!=")) {
+    return GenOperation("!", nullptr, GenOperation("==", op1, op2));
+  } else {
+    return GenBinaryOp(opName, op1, op2);
+  }
+}
+
+Location *CodeGenerator::GenStrOperation(const char *opName, Location *op1,
+                                         Location *op2)
+{
+  if (!strcmp(opName, "!="))
+    return GenOperation("!", nullptr, GenStrOperation("==", op1, op2));
+  return GenBuiltInCall(BuiltIn::StringEqual, op1, op2);
+}
 
 Location *CodeGenerator::GenBinaryOp(const char *opName, Location *op1,
 						     Location *op2)
@@ -114,6 +156,9 @@ BeginFunc *CodeGenerator::GenBeginFunc()
 {
   BeginFunc *result = new BeginFunc;
   code->Append(result);
+  OffsetToLocal = OffsetToFirstLocal;
+  OffsetToParam = OffsetToFirstParam;
+  OffsetToGlobal = OffsetToFirstGlobal;
   return result;
 }
 

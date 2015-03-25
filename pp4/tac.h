@@ -26,6 +26,8 @@
 #include "list.h" // for VTable
 #include "mips.h"
 
+#include <iostream>
+
     // A Location object is used to identify the operands to the
     // various TAC instructions. A Location is either fp or gp
     // relative (depending on whether livein stack or global segemnt)
@@ -49,6 +51,7 @@ class Location
     const char *GetName()           { return variableName; }
     Segment GetSegment()            { return segment; }
     int GetOffset()                 { return offset; }
+    void Print()                    { /*std::cout << variableName << " " << offset << std::endl;*/ }
 };
  
 

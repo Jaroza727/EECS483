@@ -5,8 +5,8 @@
  * language (add, call, New, etc.) there is a corresponding
  * node class for that construct. 
  *
- * pp4: You will need to extend the Expr classes to implement 
- * code generation for expressions.
+ * pp3: You will need to extend the Expr classes to implement 
+ * semantic analysis for rules pertaining to expressions.
  */
 
 
@@ -15,17 +15,17 @@
 
 #include "ast.h"
 #include "ast_stmt.h"
+#include "ast_type.h"
 #include "list.h"
-
-class NamedType; // for new
-class Type; // for NewArray
-
 
 class Expr : public Stmt 
 {
   public:
     Expr(yyltype loc) : Stmt(loc) {}
     Expr() : Stmt() {}
+    virtual void Check() {}
+    virtual Type *GetType() { return NULL; }
+    virtual tNode GetNode() { return tNode::NodeT; }
 };
 
 /* This node type is used for those places where an expression is optional.
@@ -34,6 +34,7 @@ class Expr : public Stmt
 class EmptyExpr : public Expr
 {
   public:
+    Type *GetType() { return Type::voidType; }
 };
 
 class IntConstant : public Expr 
@@ -43,8 +44,11 @@ class IntConstant : public Expr
   
   public:
     IntConstant(yyltype loc, int val);
+    Type *GetType() { return Type::intType; }
+    Location *GenCode() override;
 };
 
+// Not considered in p4
 class DoubleConstant : public Expr 
 {
   protected:
@@ -52,6 +56,7 @@ class DoubleConstant : public Expr
     
   public:
     DoubleConstant(yyltype loc, double val);
+    Type *GetType() { return Type::doubleType; }
 };
 
 class BoolConstant : public Expr 
@@ -61,6 +66,8 @@ class BoolConstant : public Expr
     
   public:
     BoolConstant(yyltype loc, bool val);
+    Type *GetType() { return Type::boolType; }
+    Location *GenCode() override;
 };
 
 class StringConstant : public Expr 
@@ -70,12 +77,15 @@ class StringConstant : public Expr
     
   public:
     StringConstant(yyltype loc, const char *val);
+    Type *GetType() { return Type::stringType; }
+    Location *GenCode() override;
 };
 
 class NullConstant: public Expr 
 {
   public: 
     NullConstant(yyltype loc) : Expr(loc) {}
+    Type *GetType() { return Type::nullType; }
 };
 
 class Operator : public Node 
@@ -85,6 +95,7 @@ class Operator : public Node
     
   public:
     Operator(yyltype loc, const char *tok);
+    const char* GetOp() { return tokenString; }
     friend std::ostream& operator<<(std::ostream& out, Operator *o) { return out << o->tokenString; }
  };
  
@@ -97,6 +108,9 @@ class CompoundExpr : public Expr
   public:
     CompoundExpr(Expr *lhs, Operator *op, Expr *rhs); // for binary
     CompoundExpr(Operator *op, Expr *rhs);             // for unary
+    virtual void Check();
+    virtual Type *GetType() { return Type::boolType; }
+    Location *GenCode() override;
 };
 
 class ArithmeticExpr : public CompoundExpr 
@@ -104,12 +118,15 @@ class ArithmeticExpr : public CompoundExpr
   public:
     ArithmeticExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     ArithmeticExpr(Operator *op, Expr *rhs) : CompoundExpr(op,rhs) {}
+    void Check();
+    Type *GetType();
 };
 
 class RelationalExpr : public CompoundExpr 
 {
   public:
     RelationalExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
+    void Check();
 };
 
 class EqualityExpr : public CompoundExpr 
@@ -117,6 +134,7 @@ class EqualityExpr : public CompoundExpr
   public:
     EqualityExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     const char *GetPrintNameForNode() { return "EqualityExpr"; }
+    void Check();
 };
 
 class LogicalExpr : public CompoundExpr 
@@ -125,6 +143,7 @@ class LogicalExpr : public CompoundExpr
     LogicalExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     LogicalExpr(Operator *op, Expr *rhs) : CompoundExpr(op,rhs) {}
     const char *GetPrintNameForNode() { return "LogicalExpr"; }
+    void Check();
 };
 
 class AssignExpr : public CompoundExpr 
@@ -132,18 +151,27 @@ class AssignExpr : public CompoundExpr
   public:
     AssignExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     const char *GetPrintNameForNode() { return "AssignExpr"; }
+    void Check();
+    Type *GetType() { return left->GetType(); }
+    Location *GenCode() override;
 };
 
 class LValue : public Expr 
 {
   public:
     LValue(yyltype loc) : Expr(loc) {}
+    virtual void Check() {}
+    virtual Type *GetType() { return NULL; }
+    virtual tNode GetNode() { return tNode::NodeT; }
 };
 
 class This : public Expr 
 {
   public:
     This(yyltype loc) : Expr(loc) {}
+    void Check();
+    Type *GetType();
+    tNode GetNode() { return tNode::ThisT; }
 };
 
 class ArrayAccess : public LValue 
@@ -153,6 +181,8 @@ class ArrayAccess : public LValue
     
   public:
     ArrayAccess(yyltype loc, Expr *base, Expr *subscript);
+    void Check();
+    Type *GetType();
 };
 
 /* Note that field access is used both for qualified names
@@ -163,11 +193,15 @@ class ArrayAccess : public LValue
 class FieldAccess : public LValue 
 {
   protected:
-    Expr *base;	// will be NULL if no explicit base
+    Expr *base; // will be NULL if no explicit base
     Identifier *field;
     
   public:
     FieldAccess(Expr *base, Identifier *field); //ok to pass NULL base
+    void Check();
+    Type *GetType();
+    Location *GenCode() override;
+    Location *FindDeclLocation();
 };
 
 /* Like field access, call is used both for qualified base.field()
@@ -177,12 +211,14 @@ class FieldAccess : public LValue
 class Call : public Expr 
 {
   protected:
-    Expr *base;	// will be NULL if no explicit base
+    Expr *base; // will be NULL if no explicit base
     Identifier *field;
     List<Expr*> *actuals;
     
   public:
     Call(yyltype loc, Expr *base, Identifier *field, List<Expr*> *args);
+    void Check();
+    Type *GetType();
 };
 
 class NewExpr : public Expr
@@ -192,6 +228,8 @@ class NewExpr : public Expr
     
   public:
     NewExpr(yyltype loc, NamedType *clsType);
+    void Check();
+    Type *GetType();
 };
 
 class NewArrayExpr : public Expr
@@ -199,21 +237,26 @@ class NewArrayExpr : public Expr
   protected:
     Expr *size;
     Type *elemType;
+    ArrayType type;
     
   public:
     NewArrayExpr(yyltype loc, Expr *sizeExpr, Type *elemType);
+    void Check();
+    Type *GetType();
 };
 
 class ReadIntegerExpr : public Expr
 {
   public:
     ReadIntegerExpr(yyltype loc) : Expr(loc) {}
+    Type *GetType() { return Type::intType; }
 };
 
 class ReadLineExpr : public Expr
 {
   public:
     ReadLineExpr(yyltype loc) : Expr (loc) {}
+    Type *GetType() { return Type::stringType; }
 };
 
     

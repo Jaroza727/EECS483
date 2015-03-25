@@ -26,6 +26,9 @@ typedef enum { Alloc, ReadLine, ReadInteger, StringEqual,
 class CodeGenerator {
   private:
     List<Instruction*> *code;
+    int OffsetToLocal = -8;
+    int OffsetToParam = 4;
+    int OffsetToGlobal = 0;
 
   public:
            // Here are some class constants to remind you of the offsets
@@ -52,6 +55,14 @@ class CodeGenerator {
          // Creates and returns a Location for a new uniquely named
          // temp variable. Does not generate any Tac instructions
     Location *GenTempVariable();
+
+         // Creates and returns a Location for a new name local variable.
+         // Does not generate any Tac instructions
+    Location *GenLocalVariable(const char* name);
+
+         // Creates and returns a Location for a new name global variable.
+         // Does not generate any Tac instructions
+    Location *GenGlobalVariable(const char* name);
 
          // Generates Tac instructions to load a constant value. Creates
          // a new temp var to hold the result. The constant 
@@ -86,7 +97,13 @@ class CodeGenerator {
          // negative number of bytes. If not given, 0 is assumed.
     Location *GenLoad(Location *addr, int offset = 0);
 
-    
+        // High level operation generator handles the gap between Decaf
+        // operations and TAC instructions.
+    Location *GenOperation(const char *opName, Location *op1, Location *op2);
+
+        // High level operation generator handles String equality.
+    Location *GenStrOperation(const char *opName, Location *op1, Location *op2);
+
          // Generates Tac instructions to perform one of the binary ops
          // identified by string name, such as "+" or "==".  Returns a
          // Location object for the new temporary where the result
@@ -147,6 +164,7 @@ class CodeGenerator {
          // and end of a function/method definition. 
     BeginFunc *GenBeginFunc();
     void GenEndFunc();
+    int GetFrameSize();
 
     
          // Generates the Tac instructions for defining vtable for a class

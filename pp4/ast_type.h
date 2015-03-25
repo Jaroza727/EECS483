@@ -5,8 +5,8 @@
  * for built-in types, the NamedType for classes and interfaces,
  * and the ArrayType for arrays of other types.  
  *
- * pp4: You will need to extend the Type classes to implement
- * code generation for types.
+ * pp3: You will need to extend the Type classes to implement
+ * the type system and rules for type equivalency and compatibility.
  */
  
 #ifndef _H_ast_type
@@ -31,7 +31,10 @@ class Type : public Node
     
     virtual void PrintToStream(std::ostream& out) { out << typeName; }
     friend std::ostream& operator<<(std::ostream& out, Type *t) { t->PrintToStream(out); return out; }
-    virtual bool IsEquivalentTo(Type *other) { return this == other; }
+    virtual bool IsEquivalentTo(Type *other);
+    virtual bool IsCompatibleWith(Type *other);
+    virtual void Check() {}
+    virtual tNode GetNode() { return tNode::NodeT; }
 };
 
 class NamedType : public Type 
@@ -43,6 +46,12 @@ class NamedType : public Type
     NamedType(Identifier *i);
     
     void PrintToStream(std::ostream& out) { out << id; }
+    void Check();
+    void CheckClass();
+    tNode GetNode() { return tNode::NamedTypeT; }
+    bool IsEquivalentTo(Type *other);
+    bool IsCompatibleWith(Type *other);
+    Identifier *GetId() { return id; }
 };
 
 class ArrayType : public Type 
@@ -54,6 +63,11 @@ class ArrayType : public Type
     ArrayType(yyltype loc, Type *elemType);
     
     void PrintToStream(std::ostream& out) { out << elemType << "[]"; }
+    void Check();
+    tNode GetNode() { return tNode::ArrayTypeT; }
+    bool IsEquivalentTo(Type *other);
+    bool IsCompatibleWith(Type *other);
+    Type *GetElemType() { return elemType; }
 };
 
  

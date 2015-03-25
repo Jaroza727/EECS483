@@ -5,8 +5,9 @@
  * specialized for declarations of variables, functions, classes,
  * and interfaces.
  *
- * pp4: You will need to extend the Decl classes to implement 
- * code generation for declarations.
+ * pp3: You will need to extend the Decl classes to implement 
+ * semantic processing including detection of declaration conflicts 
+ * and managing scoping issues.
  */
 
 #ifndef _H_ast_decl
@@ -27,36 +28,25 @@ class Decl : public Node
   public:
     Decl(Identifier *name);
     friend std::ostream& operator<<(std::ostream& out, Decl *d) { return out << d->id; }
+    Identifier *GetId() { return id; }
+    virtual void Check() {}
+    virtual tNode GetNode() { return tNode::NodeT; }
 };
 
 class VarDecl : public Decl 
 {
   protected:
     Type *type;
+    Location *location;
     
   public:
     VarDecl(Identifier *name, Type *type);
-};
-
-class ClassDecl : public Decl 
-{
-  protected:
-    List<Decl*> *members;
-    NamedType *extends;
-    List<NamedType*> *implements;
-
-  public:
-    ClassDecl(Identifier *name, NamedType *extends, 
-              List<NamedType*> *implements, List<Decl*> *members);
-};
-
-class InterfaceDecl : public Decl 
-{
-  protected:
-    List<Decl*> *members;
-    
-  public:
-    InterfaceDecl(Identifier *name, List<Decl*> *members);
+    void Check();
+    tNode GetNode() { return tNode::VarDeclT; }
+    Type *GetType() { return type; }
+    Location *GenCode() override;
+    Location *GenGlobalCode();
+    Location *GetLocation() { return location; }
 };
 
 class FnDecl : public Decl 
@@ -69,6 +59,43 @@ class FnDecl : public Decl
   public:
     FnDecl(Identifier *name, Type *returnType, List<VarDecl*> *formals);
     void SetFunctionBody(Stmt *b);
+    tNode GetNode() { return tNode::FnDeclT; }
+    Type *GetType() { return returnType; }
+    List<VarDecl*> *GetFormals() { return formals; }
+    void Check();
+    Location *GenCode() override;
+};
+
+class InterfaceDecl : public Decl 
+{
+  protected:
+    List<Decl*> *members;
+    
+  public:
+    InterfaceDecl(Identifier *name, List<Decl*> *members);
+    tNode GetNode() { return tNode::InterfaceDeclT; }
+    List<Decl*> *GetMembers() { return members; }
+    void Check();
+};
+
+class ClassDecl : public Decl 
+{
+  protected:
+    List<Decl*> *members;
+    NamedType *extends;
+    List<NamedType*> *implements;
+    NamedType type;
+    void CheckOverride(FnDecl *decl, FnDecl *prev, bool override = true);
+    void CheckImplement(NamedType *impl);
+
+  public:
+    ClassDecl(Identifier *name, NamedType *extends, 
+              List<NamedType*> *implements, List<Decl*> *members);
+    void Check();
+    tNode GetNode() { return tNode::ClassDeclT; }
+    NamedType *GetExtends() { return extends; }
+    List<NamedType*> *GetImpls() { return implements; }
+    NamedType *GetType() { return &type; }
 };
 
 #endif

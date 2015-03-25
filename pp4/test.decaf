@@ -1,5 +1,18 @@
-void main() {
-    int c;
+int ga;
+int gb;
 
-    c = 1;
+void main() {
+    string a;
+    string b;
+    bool c;
+    int d;
+
+    a = "123";
+    b = "123";
+    c = (a == b);
+}
+
+void func() {
+    int a;
+    int b;
 }
