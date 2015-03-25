@@ -10,6 +10,8 @@ void main() {
     a = "123";
     b = "123";
     c = (a == b);
+    d = 2;
+    Print(a, b, c, d);
 }
 
 void func() {

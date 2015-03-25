@@ -191,3 +191,20 @@ void PrintStmt::Check()
             ReportError::PrintArgMismatch(args->Nth(i), i + 1, type);
     }
 }
+
+Location *PrintStmt::GenCode()
+{
+    for (int i = 0; i < args->NumElements(); ++i)
+    {
+        Type *type = args->Nth(i)->GetType();
+        if (type == Type::intType)
+            g_code_generator_ptr->GenBuiltInCall(BuiltIn::PrintInt, args->Nth(i)->GenCode());
+        else if (type == Type::boolType)
+            g_code_generator_ptr->GenBuiltInCall(BuiltIn::PrintBool, args->Nth(i)->GenCode());
+        else if (type == Type::stringType)
+            g_code_generator_ptr->GenBuiltInCall(BuiltIn::PrintString, args->Nth(i)->GenCode());
+        else
+            Assert(false);
+    }
+    return nullptr;
+}
