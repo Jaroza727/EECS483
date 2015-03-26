@@ -486,7 +486,6 @@ FnDecl *Call::FindDecl()
 {
     if (base)
     {
-        Assert(false); // TODO
         FnDecl* fnDecl;
         Node *p = this;
         while (p && p->GetNode() != tNode::ClassDeclT) p = p->GetParent();
@@ -494,10 +493,9 @@ FnDecl *Call::FindDecl()
         Type *type = base->GetType();
         if (type->GetNode() == tNode::ArrayTypeT && !strcmp(field->GetName(), "length"))
         {
-            int given = actuals->NumElements();
-            if (given) ReportError::NumArgsMismatch(field, 0, given);
             return nullptr;
         }
+        Assert(false); // TODO
         if (type->GetNode() != tNode::NamedTypeT)
         {
             ReportError::FieldNotFoundInBase(field, type);
@@ -537,16 +535,24 @@ FnDecl *Call::FindDecl()
 Location *Call::GenCode()
 {
     FnDecl *fnDecl = FindDecl();
-    List<Location*> argLocations;
-    for (int i = 0; i < actuals->NumElements(); ++i)
-        argLocations.Append(actuals->Nth(i)->GenCode());
-    for (int i = argLocations.NumElements() - 1; i >= 0; --i)
-        g_code_generator_ptr->GenPushParam(argLocations.Nth(i));
-    char label[33];
-    sprintf(label, "_%s", fnDecl->GetId()->GetName());
-    Location *returnLoc = g_code_generator_ptr->GenLCall(label, fnDecl->GetType());
-    g_code_generator_ptr->GenPopParams(CodeGenerator::VarSize * argLocations.NumElements());
-    return returnLoc;
+    if (fnDecl)
+    {
+        List<Location*> argLocations;
+        for (int i = 0; i < actuals->NumElements(); ++i)
+            argLocations.Append(actuals->Nth(i)->GenCode());
+        for (int i = argLocations.NumElements() - 1; i >= 0; --i)
+            g_code_generator_ptr->GenPushParam(argLocations.Nth(i));
+        char label[33];
+        sprintf(label, "_%s", fnDecl->GetId()->GetName());
+        Location *returnLoc = g_code_generator_ptr->GenLCall(label, fnDecl->GetType());
+        g_code_generator_ptr->GenPopParams(CodeGenerator::VarSize * argLocations.NumElements());
+        return returnLoc;
+    }
+    else
+    {
+        // array.length()
+        return g_code_generator_ptr->GenLoad(base->GenCode(), -CodeGenerator::VarSize);
+    }
 }
 
 Type *Call::GetType()
