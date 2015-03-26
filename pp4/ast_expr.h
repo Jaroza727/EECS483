@@ -246,6 +246,7 @@ class NewArrayExpr : public Expr
     NewArrayExpr(yyltype loc, Expr *sizeExpr, Type *elemType);
     void Check();
     Type *GetType();
+    Location *GenCode() override;
 };
 
 class ReadIntegerExpr : public Expr
@@ -260,6 +261,15 @@ class ReadLineExpr : public Expr
   public:
     ReadLineExpr(yyltype loc) : Expr (loc) {}
     Type *GetType() { return Type::stringType; }
+};
+
+class HaltExpr : public Expr
+{
+  protected:
+    
+  public:
+    HaltExpr();
+    Location *GenCode() override;
 };
 
     

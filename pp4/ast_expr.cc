@@ -243,6 +243,30 @@ void NewArrayExpr::Check()
     if (!size->GetType()->IsEquivalentTo(Type::intType)) ReportError::NewArraySizeNotInteger(size);
 }
 
+Location *NewArrayExpr::GenCode()
+{
+    // Check array size
+    yyltype loc;
+    List<Expr*> *errorStr = new List<Expr*>;
+    errorStr->Append(new StringConstant(loc, err_arr_bad_size));
+    List<Stmt*> *failCheck = new List<Stmt*>;
+    failCheck->Append(new PrintStmt(errorStr));
+    failCheck->Append(new HaltExpr());
+    IfStmt *sizeCheck = new IfStmt(new CompoundExpr(size, new Operator(loc, "<"), new IntConstant(loc, 1)),
+                                   new StmtBlock(new List<VarDecl*>, failCheck), NULL);
+    sizeCheck->GenCode();
+
+    // Allocate space
+    auto sizeLoc = size->GenCode();
+    auto cellNeeded = g_code_generator_ptr->GenBinaryOp("+", sizeLoc, g_code_generator_ptr->GenLoadConstant(1));
+    auto spaceNeeded = g_code_generator_ptr->GenBinaryOp("*", cellNeeded,
+                                                              g_code_generator_ptr->GenLoadConstant(CodeGenerator::VarSize));
+    auto allocatedSpace = g_code_generator_ptr->GenBuiltInCall(BuiltIn::Alloc, spaceNeeded);
+    g_code_generator_ptr->GenStore(allocatedSpace, sizeLoc);
+    auto realArrayStartLoc = g_code_generator_ptr->GenBinaryOp("+", sizeLoc, allocatedSpace);    
+    return realArrayStartLoc;
+}
+
 Type *NewArrayExpr::GetType()
 {   
     Type *eType = elemType;
@@ -574,4 +598,12 @@ Type *Call::GetType()
     int numExpect = formals->NumElements(), numGiven = formals->NumElements();
     if (numExpect != numGiven) return Type::errorType;
     return fnDecl->GetType();
+}
+
+HaltExpr::HaltExpr() : Expr() {}
+
+Location *HaltExpr::GenCode()
+{
+    g_code_generator_ptr->GenBuiltInCall(BuiltIn::Halt);
+    return nullptr;
 }

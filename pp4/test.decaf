@@ -1,20 +1,9 @@
 int ga;
-int gb;
+int[] gb;
 
 void main() {
-    string a;
-    string b;
-    bool c;
-    int d;
+    int c;
 
-    a = "123";
-    b = "123";
-    c = (a == b);
-    d = 2;
-    Print(a, b, c, d);
-}
-
-void func() {
-    int a;
-    int b;
+    gb = NewArray(3, int);
+    c = gb.length();
 }
