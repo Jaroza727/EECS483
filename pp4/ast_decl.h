@@ -46,6 +46,7 @@ class VarDecl : public Decl
     Type *GetType() { return type; }
     Location *GenCode() override;
     Location *GenGlobalCode();
+    Location *GenArgCode();
     Location *GetLocation() { return location; }
 };
 

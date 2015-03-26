@@ -56,11 +56,15 @@ class CodeGenerator {
          // temp variable. Does not generate any Tac instructions
     Location *GenTempVariable();
 
-         // Creates and returns a Location for a new name local variable.
+         // Creates and returns a Location for a new named local variable.
          // Does not generate any Tac instructions
     Location *GenLocalVariable(const char* name);
 
-         // Creates and returns a Location for a new name global variable.
+         // Creates and returns a Location for a new named argument variable.
+         // Does not generate any Tac instructions
+    Location *GenArgVariable(const char* name);
+
+         // Creates and returns a Location for a new named global variable.
          // Does not generate any Tac instructions
     Location *GenGlobalVariable(const char* name);
 

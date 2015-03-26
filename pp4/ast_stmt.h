@@ -122,6 +122,7 @@ class ReturnStmt : public Stmt
   public:
     ReturnStmt(yyltype loc, Expr *expr);
     void Check();
+    Location *GenCode() override;
 };
 
 class PrintStmt : public Stmt

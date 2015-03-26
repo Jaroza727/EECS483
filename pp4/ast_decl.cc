@@ -61,6 +61,11 @@ Location *VarDecl::GenGlobalCode() {
     return location;
 }
 
+Location *VarDecl::GenArgCode() {
+    location = g_code_generator_ptr->GenArgVariable(id->GetName());
+    return location;
+}
+
 void ClassDecl::CheckOverride(FnDecl *decl, FnDecl *prev, bool override)
 {
     bool flag = decl->GetType()->IsEquivalentTo(prev->GetType());
@@ -157,6 +162,8 @@ Location *FnDecl::GenCode() {
         sprintf(label, "_%s", id->GetName());
     g_code_generator_ptr->GenLabel(label);
 
+    for (int i = 0; i < formals->NumElements(); ++i)
+        formals->Nth(i)->GenArgCode();
     BeginFunc *beginFunc = g_code_generator_ptr->GenBeginFunc();
     if (body) {
         body->GenCode();

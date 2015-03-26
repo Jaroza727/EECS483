@@ -42,6 +42,13 @@ Location *CodeGenerator::GenLocalVariable(const char* name)
   return result;
 }
 
+Location *CodeGenerator::GenArgVariable(const char* name)
+{
+  Location *result = new Location(Segment::fpRelative, OffsetToParam, name);
+  OffsetToParam += VarSize;
+  return result;
+}
+
 Location *CodeGenerator::GenGlobalVariable(const char* name)
 {
   Location *result = new Location(Segment::gpRelative, OffsetToGlobal, name);

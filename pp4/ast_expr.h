@@ -16,6 +16,7 @@
 #include "ast.h"
 #include "ast_stmt.h"
 #include "ast_type.h"
+#include "ast_decl.h"
 #include "list.h"
 
 class Expr : public Stmt 
@@ -219,6 +220,8 @@ class Call : public Expr
     Call(yyltype loc, Expr *base, Identifier *field, List<Expr*> *args);
     void Check();
     Type *GetType();
+    Location *GenCode() override;
+    FnDecl *FindDecl();
 };
 
 class NewExpr : public Expr

@@ -181,6 +181,15 @@ void ReturnStmt::Check()
     if (!given->IsCompatibleWith(expect)) ReportError::ReturnMismatch(this, given, expect);
 }
 
+Location *ReturnStmt::GenCode()
+{
+    if (expr)
+        g_code_generator_ptr->GenReturn(expr->GenCode());
+    else
+        g_code_generator_ptr->GenReturn();
+    return nullptr;
+}
+
 void PrintStmt::Check()
 {
     for (int i = 0; i < args->NumElements(); ++i) args->Nth(i)->Check();

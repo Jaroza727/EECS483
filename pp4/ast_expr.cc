@@ -458,6 +458,73 @@ void Call::Check()
     }
 }
 
+FnDecl *Call::FindDecl()
+{
+    if (base)
+    {
+        Assert(false); // TODO
+        FnDecl* fnDecl;
+        Node *p = this;
+        while (p && p->GetNode() != tNode::ClassDeclT) p = p->GetParent();
+        ClassDecl *classDecl = (ClassDecl*)p;
+        Type *type = base->GetType();
+        if (type->GetNode() == tNode::ArrayTypeT && !strcmp(field->GetName(), "length"))
+        {
+            int given = actuals->NumElements();
+            if (given) ReportError::NumArgsMismatch(field, 0, given);
+            return nullptr;
+        }
+        if (type->GetNode() != tNode::NamedTypeT)
+        {
+            ReportError::FieldNotFoundInBase(field, type);
+            return nullptr;
+        }
+        Decl *decl = GetRoot()->Lookup(((NamedType*)type)->GetId());
+        if (!decl) return nullptr;
+        if (base->GetNode() == tNode::ThisT)
+        {
+            if (!classDecl) return nullptr;
+            decl = classDecl;
+        }
+        Decl *var = decl->Lookup(field);
+        if (!var || var->GetNode() != tNode::FnDeclT)
+        {
+            ReportError::FieldNotFoundInBase(field, type);
+            return nullptr;
+        }
+        fnDecl = (FnDecl*)var;
+        return nullptr;
+    }
+    else
+    {
+        Node *p = this;
+        while (p)
+        {
+            Decl *decl = p->Lookup(field);
+            if (decl)
+                return (FnDecl*)decl;
+            p = p->GetParent();
+        }
+    }
+    Assert(false);
+    return nullptr;
+}
+
+Location *Call::GenCode()
+{
+    FnDecl *fnDecl = FindDecl();
+    List<Location*> argLocations;
+    for (int i = 0; i < actuals->NumElements(); ++i)
+        argLocations.Append(actuals->Nth(i)->GenCode());
+    for (int i = argLocations.NumElements() - 1; i >= 0; --i)
+        g_code_generator_ptr->GenPushParam(argLocations.Nth(i));
+    char label[33];
+    sprintf(label, "_%s", fnDecl->GetId()->GetName());
+    Location *returnLoc = g_code_generator_ptr->GenLCall(label, fnDecl->GetType());
+    g_code_generator_ptr->GenPopParams(CodeGenerator::VarSize * argLocations.NumElements());
+    return returnLoc;
+}
+
 Type *Call::GetType()
 {
     FnDecl *fnDecl = NULL;
@@ -507,4 +574,4 @@ Type *Call::GetType()
     int numExpect = formals->NumElements(), numGiven = formals->NumElements();
     if (numExpect != numGiven) return Type::errorType;
     return fnDecl->GetType();
-}  
+}
