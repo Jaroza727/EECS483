@@ -154,10 +154,20 @@ void AssignExpr::Check()
 }
 
 Location *AssignExpr::GenCode() {
-    auto lloc = left->GenCode();
-    auto rloc = right->GenCode();
-    g_code_generator_ptr->GenAssign(lloc, rloc);
-    return lloc;
+    if (auto arrayAccess = dynamic_cast<ArrayAccess*>(left))
+    {
+        auto lloc = arrayAccess->GenCellAddrCode();
+        auto rloc = right->GenCode();
+        g_code_generator_ptr->GenStore(lloc, rloc);
+        return rloc;
+    }
+    else
+    {
+        auto lloc = left->GenCode();
+        auto rloc = right->GenCode();
+        g_code_generator_ptr->GenAssign(lloc, rloc);
+        return lloc;
+    }
 }
 
 void This::Check()
@@ -186,6 +196,33 @@ void ArrayAccess::Check()
     subscript->Check();
     if (base->GetType()->GetNode() != tNode::ArrayTypeT) ReportError::BracketsOnNonArray(base);
     if (!subscript->GetType()->IsEquivalentTo(Type::intType)) ReportError::SubscriptNotInteger(subscript);
+}
+
+Location *ArrayAccess::GenCode()
+{
+    return g_code_generator_ptr->GenLoad(GenCellAddrCode());
+}
+
+Location *ArrayAccess::GenCellAddrCode()
+{
+    // Check subscript in bound
+    auto baseLoc = base->GenCode();
+    auto subscriptLoc = subscript->GenCode();
+    auto smallerThanZero = g_code_generator_ptr->GenOperation("<", subscriptLoc, g_code_generator_ptr->GenLoadConstant(0));
+    auto sizeLoc = g_code_generator_ptr->GenLoad(baseLoc, -CodeGenerator::VarSize);
+    auto greaterEqualToSize = g_code_generator_ptr->GenOperation(">=", subscriptLoc, sizeLoc);
+    auto endLabel = g_code_generator_ptr->NewLabel();
+    auto testResult = g_code_generator_ptr->GenOperation("||", smallerThanZero, greaterEqualToSize);
+    g_code_generator_ptr->GenIfZ(testResult, endLabel);
+    g_code_generator_ptr->GenBuiltInCall(BuiltIn::PrintString, g_code_generator_ptr->GenLoadConstant(err_arr_out_of_bounds));
+    g_code_generator_ptr->GenBuiltInCall(BuiltIn::Halt);
+    g_code_generator_ptr->GenLabel(endLabel);
+
+    // Load cell value
+    auto cellOffset = g_code_generator_ptr->GenOperation("*", subscriptLoc,
+                                                         g_code_generator_ptr->GenLoadConstant(CodeGenerator::VarSize));
+    auto cellLoc = g_code_generator_ptr->GenOperation("+", baseLoc, cellOffset);
+    return cellLoc;
 }
 
 Type *ArrayAccess::GetType()

@@ -175,7 +175,7 @@ class This : public Expr
     tNode GetNode() { return tNode::ThisT; }
 };
 
-class ArrayAccess : public LValue 
+class ArrayAccess : public LValue
 {
   protected:
     Expr *base, *subscript;
@@ -184,6 +184,8 @@ class ArrayAccess : public LValue
     ArrayAccess(yyltype loc, Expr *base, Expr *subscript);
     void Check();
     Type *GetType();
+    Location *GenCode() override;
+    Location *GenCellAddrCode();
 };
 
 /* Note that field access is used both for qualified names
