@@ -293,11 +293,11 @@ Location *NewArrayExpr::GenCode()
 
     // Allocate space
     auto cellNeeded = g_code_generator_ptr->GenOperation("+", sizeLoc, g_code_generator_ptr->GenLoadConstant(1));
-    auto spaceNeeded = g_code_generator_ptr->GenOperation("*", cellNeeded,
-                                                              g_code_generator_ptr->GenLoadConstant(CodeGenerator::VarSize));
+    auto varSize = g_code_generator_ptr->GenLoadConstant(CodeGenerator::VarSize);
+    auto spaceNeeded = g_code_generator_ptr->GenOperation("*", cellNeeded, varSize);
     auto allocatedSpace = g_code_generator_ptr->GenBuiltInCall(BuiltIn::Alloc, spaceNeeded);
     g_code_generator_ptr->GenStore(allocatedSpace, sizeLoc);
-    auto realArrayStartLoc = g_code_generator_ptr->GenOperation("+", sizeLoc, allocatedSpace);    
+    auto realArrayStartLoc = g_code_generator_ptr->GenOperation("+", varSize, allocatedSpace);    
     return realArrayStartLoc;
 }
 
