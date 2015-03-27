@@ -264,15 +264,5 @@ class ReadLineExpr : public Expr
     ReadLineExpr(yyltype loc) : Expr (loc) {}
     Type *GetType() { return Type::stringType; }
 };
-
-class HaltExpr : public Expr
-{
-  protected:
-    
-  public:
-    HaltExpr();
-    Location *GenCode() override;
-};
-
     
 #endif

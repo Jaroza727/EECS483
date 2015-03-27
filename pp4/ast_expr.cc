@@ -283,24 +283,21 @@ void NewArrayExpr::Check()
 Location *NewArrayExpr::GenCode()
 {
     // Check array size
-    yyltype loc;
-    List<Expr*> *errorStr = new List<Expr*>;
-    errorStr->Append(new StringConstant(loc, err_arr_bad_size));
-    List<Stmt*> *failCheck = new List<Stmt*>;
-    failCheck->Append(new PrintStmt(errorStr));
-    failCheck->Append(new HaltExpr());
-    IfStmt *sizeCheck = new IfStmt(new CompoundExpr(size, new Operator(loc, "<"), new IntConstant(loc, 1)),
-                                   new StmtBlock(new List<VarDecl*>, failCheck), NULL);
-    sizeCheck->GenCode();
+    auto sizeLoc = size->GenCode();
+    auto smallerThanOne = g_code_generator_ptr->GenOperation("<", sizeLoc, g_code_generator_ptr->GenLoadConstant(1));
+    auto endLabel = g_code_generator_ptr->NewLabel();
+    g_code_generator_ptr->GenIfZ(smallerThanOne, endLabel);
+    g_code_generator_ptr->GenBuiltInCall(BuiltIn::PrintString, g_code_generator_ptr->GenLoadConstant(err_arr_bad_size));
+    g_code_generator_ptr->GenBuiltInCall(BuiltIn::Halt);
+    g_code_generator_ptr->GenLabel(endLabel);
 
     // Allocate space
-    auto sizeLoc = size->GenCode();
-    auto cellNeeded = g_code_generator_ptr->GenBinaryOp("+", sizeLoc, g_code_generator_ptr->GenLoadConstant(1));
-    auto spaceNeeded = g_code_generator_ptr->GenBinaryOp("*", cellNeeded,
+    auto cellNeeded = g_code_generator_ptr->GenOperation("+", sizeLoc, g_code_generator_ptr->GenLoadConstant(1));
+    auto spaceNeeded = g_code_generator_ptr->GenOperation("*", cellNeeded,
                                                               g_code_generator_ptr->GenLoadConstant(CodeGenerator::VarSize));
     auto allocatedSpace = g_code_generator_ptr->GenBuiltInCall(BuiltIn::Alloc, spaceNeeded);
     g_code_generator_ptr->GenStore(allocatedSpace, sizeLoc);
-    auto realArrayStartLoc = g_code_generator_ptr->GenBinaryOp("+", sizeLoc, allocatedSpace);    
+    auto realArrayStartLoc = g_code_generator_ptr->GenOperation("+", sizeLoc, allocatedSpace);    
     return realArrayStartLoc;
 }
 
@@ -641,12 +638,4 @@ Type *Call::GetType()
     int numExpect = formals->NumElements(), numGiven = formals->NumElements();
     if (numExpect != numGiven) return Type::errorType;
     return fnDecl->GetType();
-}
-
-HaltExpr::HaltExpr() : Expr() {}
-
-Location *HaltExpr::GenCode()
-{
-    g_code_generator_ptr->GenBuiltInCall(BuiltIn::Halt);
-    return nullptr;
 }
