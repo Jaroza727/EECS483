@@ -130,7 +130,7 @@ Location *CodeGenerator::GenStrOperation(const char *opName, Location *op1,
 }
 
 Location *CodeGenerator::GenBinaryOp(const char *opName, Location *op1,
-						     Location *op2)
+						                         Location *op2)
 {
   Location *result = GenTempVariable();
   code->Append(new BinaryOp(BinaryOp::OpCodeForName(opName), result, op1, op2));

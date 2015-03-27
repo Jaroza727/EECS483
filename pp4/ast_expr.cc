@@ -66,7 +66,7 @@ void CompoundExpr::Check()
 
 Location *CompoundExpr::GenCode()
 {
-    if (left->GetType() == Type::stringType
+    if (left && left->GetType() == Type::stringType
         && right->GetType() == Type::stringType
         && (!strcmp(op->GetOp(), "==") || !strcmp(op->GetOp(), "!=")) )
     {

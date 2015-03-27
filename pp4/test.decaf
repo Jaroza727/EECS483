@@ -3,8 +3,10 @@ int[] gb;
 
 void main() {
     int c;
+    bool b;
 
     gb = NewArray(3, int);
     gb[2] = 1;
     c = gb[2];
+    b = !true;
 }
