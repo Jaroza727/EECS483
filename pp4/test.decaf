@@ -2,11 +2,24 @@ int ga;
 int[] gb;
 
 void main() {
-    int c;
-    bool b;
+    Base b;
+    Derived d;
 
-    gb = NewArray(3, int);
-    gb[2] = 1;
-    c = gb[2];
-    b = !true;
+    b = New(Base);
+    d = New(Derived);
+}
+
+class Base {
+    int c;
+    int b;
+
+    void Init() {}
+    void Show() {}
+}
+
+class Derived extends Base {
+    int d;
+
+    void Init() {}
+    void Echo() {}
 }

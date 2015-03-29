@@ -260,6 +260,18 @@ void NewExpr::Check()
     cType->CheckClass();
 }
 
+Location *NewExpr::GenCode()
+{
+    auto classDecl = dynamic_cast<ClassDecl*>(GetRoot()->Lookup(cType->GetId()));
+    Assert(classDecl);
+    auto size = classDecl->GetMemberVariableSize();
+    auto loc = g_code_generator_ptr->GenBuiltInCall(BuiltIn::Alloc,
+                                                    g_code_generator_ptr->GenLoadConstant(size));
+    auto vtableLoc = g_code_generator_ptr->GenLoadLabel(classDecl->GetId()->GetName());
+    g_code_generator_ptr->GenStore(loc, vtableLoc);
+    return loc;
+}
+
 Type *NewExpr::GetType()
 {
     Decl *decl = GetRoot()->Lookup(cType->GetId());

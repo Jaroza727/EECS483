@@ -235,6 +235,7 @@ class NewExpr : public Expr
     NewExpr(yyltype loc, NamedType *clsType);
     void Check();
     Type *GetType();
+    Location *GenCode() override;
 };
 
 class NewArrayExpr : public Expr

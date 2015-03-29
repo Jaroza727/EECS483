@@ -130,6 +130,43 @@ void ClassDecl::Check()
     if (extends) extends->CheckClass();
     for (int i = 0; i < implements->NumElements(); ++i) CheckImplement(implements->Nth(i));
     for (int i = 0; i < members->NumElements(); ++i) members->Nth(i)->Check();
+
+    memberVariableSize = 1;
+    if (extends)
+    {
+        auto parentClass = dynamic_cast<ClassDecl*>(GetRoot()->Lookup(extends->GetId()));
+        Assert(parentClass);
+        auto& parentMethodLabels = parentClass->methodLabels;
+        methodLabels.insert(parentMethodLabels.begin(), parentMethodLabels.end());
+        memberVariableSize = parentClass->memberVariableSize;
+    }
+}
+
+Location *ClassDecl::GenCode()
+{
+    // Generate class vtable
+    for (int i = 0; i < members->NumElements(); ++i)
+    {
+        if (auto fnDecl = dynamic_cast<FnDecl*>(members->Nth(i)))
+        {
+            fnDecl->GenClassCode(this);
+            methodLabels[fnDecl->GetId()->GetName()] = id->GetName();
+        }
+        else
+        {
+            memberVariableSize++;
+        }
+    }
+    auto methodLabelList = new List<const char*>;
+    for (auto& pair : methodLabels)
+    {
+        char* name = new char[66];
+        sprintf(name, "%s_%s", pair.second, pair.first);
+        methodLabelList->Append(name);
+    }
+    g_code_generator_ptr->GenVTable(id->GetName(), methodLabelList);
+
+    return nullptr;
 }
 
 void InterfaceDecl::Check()
@@ -171,4 +208,20 @@ Location *FnDecl::GenCode() {
     beginFunc->SetFrameSize(g_code_generator_ptr->GetFrameSize());
     g_code_generator_ptr->GenEndFunc();
     return nullptr;
+}
+
+void FnDecl::GenClassCode(ClassDecl *base)
+{
+    auto name = new char[66];
+    sprintf(name, "%s_%s", base->GetId()->GetName(), id->GetName());
+    g_code_generator_ptr->GenLabel(name);
+    g_code_generator_ptr->GenArgVariable("this"); // "this"
+    for (int i = 0; i < formals->NumElements(); ++i)
+        formals->Nth(i)->GenArgCode();
+    BeginFunc *beginFunc = g_code_generator_ptr->GenBeginFunc();
+    if (body) {
+        body->GenCode();
+    }
+    beginFunc->SetFrameSize(g_code_generator_ptr->GetFrameSize());
+    g_code_generator_ptr->GenEndFunc();
 }

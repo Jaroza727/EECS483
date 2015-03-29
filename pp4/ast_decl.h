@@ -16,6 +16,7 @@
 #include "ast.h"
 #include "ast_type.h"
 #include "list.h"
+#include <map>
 
 class Identifier;
 class Stmt;
@@ -50,6 +51,7 @@ class VarDecl : public Decl
     Location *GetLocation() { return location; }
 };
 
+class ClassDecl; // Forward declaration
 class FnDecl : public Decl 
 {
   protected:
@@ -65,6 +67,7 @@ class FnDecl : public Decl
     List<VarDecl*> *GetFormals() { return formals; }
     void Check();
     Location *GenCode() override;
+    void GenClassCode(ClassDecl *base);
 };
 
 class InterfaceDecl : public Decl 
@@ -86,8 +89,16 @@ class ClassDecl : public Decl
     NamedType *extends;
     List<NamedType*> *implements;
     NamedType type;
+    int memberVariableSize;
     void CheckOverride(FnDecl *decl, FnDecl *prev, bool override = true);
     void CheckImplement(NamedType *impl);
+
+    struct Comparator
+    {
+      bool operator() (const char* lhs, const char* rhs)
+      { return strcmp(lhs, rhs) < 0; }
+    };
+    std::map<const char*, const char*, Comparator> methodLabels;
 
   public:
     ClassDecl(Identifier *name, NamedType *extends, 
@@ -97,6 +108,8 @@ class ClassDecl : public Decl
     NamedType *GetExtends() { return extends; }
     List<NamedType*> *GetImpls() { return implements; }
     NamedType *GetType() { return &type; }
+    Location *GenCode() override;
+    int GetMemberVariableSize() { return memberVariableSize; }
 };
 
 #endif
