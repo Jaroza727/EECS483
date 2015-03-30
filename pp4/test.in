@@ -1,0 +1,36 @@
+int a;
+int b;
+bool[] c;
+
+int fn1(int a, int b)
+{
+	{
+		int a;
+		Print(-1 / -0);
+		Print(-1 > -0 && -1 == 0);
+		Print(!(-1 <= -0) && !(-1 >= -0) || !(-1 < -0 || -1 != 0));
+		Print(b = a = 100);
+	}
+	{
+		int b;
+		Print(b = a = 10);
+	}
+	Print(b = a = 10);
+	return b;
+}
+
+int fn2() { return 0; }
+
+bool fn3() { return false && 0 > 1; }
+
+void fn4() { return; }
+
+bool main()
+{
+	a = fn1(a, b);
+	b = fn2();
+	Print("abcd");
+	c = NewArray(10, bool);
+	c[4] = c[3] = c[2] = c[0] = false;
+	return c[4];
+}
