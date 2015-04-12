@@ -170,6 +170,8 @@ class CodeGenerator {
 private:
         // Construct Intra-procedural CFG for Liveness analysis.
     void BuildCFG();
+        // Conduct Liveness Analysis
+    void LiveVariableAnalysis();
 };
 
 #endif

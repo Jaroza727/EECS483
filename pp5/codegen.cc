@@ -11,6 +11,7 @@
 #include "ast_decl.h"
 #include "mips.h"
 #include "hashtable.h"
+#include <iostream>
   
 CodeGenerator::CodeGenerator()
 {
@@ -210,20 +211,22 @@ void CodeGenerator::BuildCFG()
   Hashtable<Instruction*> labelToTac;
   for (int i = 0; i < code->NumElements() - 1; i++)
   {
-    if (auto labelTac = dynamic_cast<Label>(code->Nth(i)))
+    if (auto labelTac = dynamic_cast<Label*>(code->Nth(i)))
     {
-      labelToTac.Entre(labelTac->GetLabel(), code->Nth(i+1));
+      labelToTac.Enter(labelTac->GetLabel(), code->Nth(i+1));
     }
   }
 
+  // std::cout << "Debug begin..." << std::endl;
   for (int i = 0; i < code->NumElements() - 1; i++)
   {
     auto tac = code->Nth(i);
-    if (auto labelTac = dynamic_cast<Label>(code->Nth(i)))
+    // tac->Print();
+    if (dynamic_cast<EndFunc*>(code->Nth(i)))
     {
       continue;
     }
-    else if (auto ifZTac = dynamic_cast<IfZ>(tac))
+    else if (auto ifZTac = dynamic_cast<IfZ*>(tac))
     {
       auto jumpToTac = labelToTac.Lookup(ifZTac->GetLabel());
       ifZTac->next.Append(jumpToTac);
@@ -231,7 +234,7 @@ void CodeGenerator::BuildCFG()
       jumpToTac->previous.Append(ifZTac);
       code->Nth(i+1)->previous.Append(ifZTac);
     }
-    else if (auto gotoTac = dynamic_cast<Goto>(tac))
+    else if (auto gotoTac = dynamic_cast<Goto*>(tac))
     {
       auto jumpToTac = labelToTac.Lookup(gotoTac->GetLabel());
       gotoTac->next.Append(jumpToTac);
@@ -242,7 +245,19 @@ void CodeGenerator::BuildCFG()
       tac->next.Append(code->Nth(i+1));
       code->Nth(i+1)->previous.Append(tac);
     }
+
+    // std::cout << ">>> Next:" << std::endl;
+    // for (int j = 0; j < tac->next.NumElements(); j++)
+    // {
+    //   tac->next.Nth(j)->Print();
+    // }
+    // std::cout << ">>> Next end." << std::endl;
   }
+  // std::cout << "Debug end" << std::endl;
 }
 
+void CodeGenerator::LiveVariableAnalysis()
+{
+  
+}
 

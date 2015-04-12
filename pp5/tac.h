@@ -74,6 +74,7 @@ class Instruction {
 
   List<Instruction*> previous; // previous instructions
   List<Instruction*> next; // next instructions
+  List<Location*> liveVars; // live variables at the beginning of the variables
 };
 
   
