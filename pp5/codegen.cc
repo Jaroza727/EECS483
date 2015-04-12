@@ -193,6 +193,7 @@ void CodeGenerator::DoFinalCodeGen()
 {
   // Register allocation
   BuildCFG();
+  LiveVariableAnalysis();
 
   if (IsDebugOn("tac")) { // if debug don't translate to mips, just print Tac
     for (int i = 0; i < code->NumElements(); i++)
@@ -258,6 +259,53 @@ void CodeGenerator::BuildCFG()
 
 void CodeGenerator::LiveVariableAnalysis()
 {
-  
+  bool changed = true;
+  while (changed)
+  {
+    changed = false;
+    for (int i = code->NumElements() - 1; i >= 0; i--)
+    {
+      auto tac = code->Nth(i);
+
+      LiveVars *newLiveVars = new LiveVars;
+      for (int j = 0; j < tac->next.NumElements(); j++) {
+        auto nextLiveVars = tac->next.Nth(j)->liveVars;
+        newLiveVars->insert(nextLiveVars->begin(), nextLiveVars->end());
+      }
+      auto gens = tac->GetGenVars();
+      auto kills = tac->GetKillVars();
+      for (auto killedLoc : *(kills))
+        newLiveVars->erase(killedLoc);
+      newLiveVars->insert(gens->begin(), gens->end());
+
+      if (*newLiveVars != *(tac->liveVars))
+        changed = true;
+      tac->liveVars = newLiveVars;
+    }
+  }
+
+  // debug output
+  // for (int i = 0; i < code->NumElements(); i++)
+  // {
+  //   auto tac = code->Nth(i);
+  //   tac->Print();
+
+  //   std::cout << "Kills: ";
+  //   auto kills = tac->GetKillVars();
+  //   for (auto loc : *(kills))
+  //     std::cout << loc->GetName() << " ";
+  //   std::cout << std::endl;
+
+  //   std::cout << "Gens: ";
+  //   auto gens = tac->GetGenVars();
+  //   for (auto loc : *(gens))
+  //     std::cout << loc->GetName() << " ";
+  //   std::cout << std::endl;
+
+  //   std::cout << "Live set: ";
+  //   for (auto loc : *(tac->liveVars))
+  //     std::cout << loc->GetName() << " ";
+  //   std::cout << std::endl;
+  // }
 }
 

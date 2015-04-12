@@ -11,7 +11,11 @@
 Location::Location(Segment s, int o, const char *name) :
   variableName(strdup(name)), segment(s), offset(o), reg(Mips::zero) {}
 
- 
+Instruction::Instruction()
+{
+  liveVars = new LiveVars;
+}
+
 void Instruction::Print() {
   printf("\t%s ;", printed);
   printf("\n");
@@ -23,6 +27,8 @@ void Instruction::Emit(Mips *mips) {
   EmitSpecific(mips);
 }
 
+
+
 LoadConstant::LoadConstant(Location *d, int v)
   : dst(d), val(v) {
   Assert(dst != NULL);
@@ -31,6 +37,13 @@ LoadConstant::LoadConstant(Location *d, int v)
 void LoadConstant::EmitSpecific(Mips *mips) {
   mips->EmitLoadConstant(dst, val);
 }
+
+LiveVars* LoadConstant::GetKillVars()
+{
+  return new LiveVars {dst};
+}
+
+
 
 LoadStringConstant::LoadStringConstant(Location *d, const char *s)
   : dst(d) {
@@ -45,7 +58,12 @@ void LoadStringConstant::EmitSpecific(Mips *mips) {
   mips->EmitLoadStringConstant(dst, str);
 }
 
+LiveVars* LoadStringConstant::GetKillVars()
+{
+  return new LiveVars {dst};
+}
      
+
 
 LoadLabel::LoadLabel(Location *d, const char *l)
   : dst(d), label(strdup(l)) {
@@ -54,6 +72,11 @@ LoadLabel::LoadLabel(Location *d, const char *l)
 }
 void LoadLabel::EmitSpecific(Mips *mips) {
   mips->EmitLoadLabel(dst, label);
+}
+
+LiveVars* LoadLabel::GetKillVars()
+{
+  return new LiveVars {dst};
 }
 
 
@@ -66,6 +89,17 @@ Assign::Assign(Location *d, Location *s)
 void Assign::EmitSpecific(Mips *mips) {
   mips->EmitCopy(dst, src);
 }
+
+LiveVars* Assign::GetKillVars()
+{
+  return new LiveVars {dst};
+}
+
+LiveVars* Assign::GetGenVars()
+{
+  return new LiveVars {src};
+}
+
 
 
 
@@ -81,6 +115,11 @@ void Load::EmitSpecific(Mips *mips) {
   mips->EmitLoad(dst, src, offset);
 }
 
+LiveVars* Load::GetKillVars()
+{
+  return new LiveVars {dst};
+}
+
 
 
 Store::Store(Location *d, Location *s, int off)
@@ -93,6 +132,11 @@ Store::Store(Location *d, Location *s, int off)
 }
 void Store::EmitSpecific(Mips *mips) {
   mips->EmitStore(dst, src, offset);
+}
+
+LiveVars* Store::GetGenVars()
+{
+  return new LiveVars {src};
 }
 
  
@@ -114,6 +158,16 @@ BinaryOp::BinaryOp(Mips::OpCode c, Location *d, Location *o1, Location *o2)
 }
 void BinaryOp::EmitSpecific(Mips *mips) {	  
   mips->EmitBinaryOp(code, dst, op1, op2);
+}
+
+LiveVars* BinaryOp::GetGenVars()
+{
+  return new LiveVars {op1, op2};
+}
+
+LiveVars* BinaryOp::GetKillVars()
+{
+  return new LiveVars {dst};
 }
 
 
@@ -149,6 +203,11 @@ void IfZ::EmitSpecific(Mips *mips) {
   mips->EmitIfZ(test, label);
 }
 
+LiveVars* IfZ::GetGenVars()
+{
+  return new LiveVars {test};
+}
+
 
 
 BeginFunc::BeginFunc() {
@@ -182,6 +241,10 @@ void Return::EmitSpecific(Mips *mips) {
   mips->EmitReturn(val);
 }
 
+LiveVars* Return::GetGenVars()
+{
+  return new LiveVars {val};
+}
 
 
 PushParam::PushParam(Location *p)
@@ -192,6 +255,12 @@ PushParam::PushParam(Location *p)
 void PushParam::EmitSpecific(Mips *mips) {
   mips->EmitParam(param);
 } 
+
+LiveVars* PushParam::GetGenVars()
+{
+  return new LiveVars {param};
+}
+
 
 
 PopParams::PopParams(int nb)
@@ -216,6 +285,14 @@ void LCall::EmitSpecific(Mips *mips) {
   mips->EmitLCall(dst, label);
 }
 
+LiveVars* LCall::GetKillVars()
+{
+  if (dst)
+    return new LiveVars {dst};
+  else
+    return new LiveVars;
+}
+
 
 ACall::ACall(Location *ma, Location *d)
   : dst(d), methodAddr(ma) {
@@ -229,6 +306,14 @@ void ACall::EmitSpecific(Mips *mips) {
    */
   mips->EmitACall(dst, methodAddr);
 } 
+
+LiveVars* ACall::GetKillVars()
+{
+  if (dst)
+    return new LiveVars {dst};
+  else
+    return new LiveVars;
+}
 
 
 
