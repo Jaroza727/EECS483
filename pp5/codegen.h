@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include "list.h"
 #include "tac.h"
- 
+
 class FnDecl;
 
               // These codes are used to identify the built-in functions
@@ -172,6 +172,10 @@ private:
     void BuildCFG();
         // Conduct Liveness Analysis
     void LiveVariableAnalysis();
+        // Build interference graph
+    void BuildInterferenceGraph();
+        // Color interference graph
+    void ColorInterferenceGraph();
 };
 
 #endif

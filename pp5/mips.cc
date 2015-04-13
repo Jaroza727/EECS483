@@ -25,8 +25,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-
-
 // Helper to check if two variable locations are one and the same
 // (same name, segment, and offset)
 static bool LocationsAreSame(Location *var1, Location *var2)
@@ -507,5 +505,4 @@ Mips::Mips() {
   rs = v0; rt = v1; rd = v0;
 }
 const char *Mips::mipsName[NumOps];
-
 

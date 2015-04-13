@@ -13,7 +13,8 @@ Location::Location(Segment s, int o, const char *name) :
 
 Instruction::Instruction()
 {
-  liveVars = new LiveVars;
+  liveVarsIn = new LiveVars;
+  liveVarsOut = new LiveVars;
 }
 
 void Instruction::Print() {

@@ -12,7 +12,8 @@
 #include "mips.h"
 #include "hashtable.h"
 #include <iostream>
-  
+#include <stack>
+
 CodeGenerator::CodeGenerator()
 {
   code = new List<Instruction*>();
@@ -194,6 +195,7 @@ void CodeGenerator::DoFinalCodeGen()
   // Register allocation
   BuildCFG();
   LiveVariableAnalysis();
+  BuildInterferenceGraph();
 
   if (IsDebugOn("tac")) { // if debug don't translate to mips, just print Tac
     for (int i = 0; i < code->NumElements(); i++)
@@ -267,20 +269,23 @@ void CodeGenerator::LiveVariableAnalysis()
     {
       auto tac = code->Nth(i);
 
-      LiveVars *newLiveVars = new LiveVars;
+      LiveVars *newLiveVarsOut = new LiveVars;
       for (int j = 0; j < tac->next.NumElements(); j++) {
-        auto nextLiveVars = tac->next.Nth(j)->liveVars;
-        newLiveVars->insert(nextLiveVars->begin(), nextLiveVars->end());
+        auto nextLiveVars = tac->next.Nth(j)->liveVarsIn;
+        newLiveVarsOut->insert(nextLiveVars->begin(), nextLiveVars->end());
       }
+
+      if (*newLiveVarsOut != *(tac->liveVarsOut))
+      {
+        changed = true;
+      }
+      tac->liveVarsOut = newLiveVarsOut;
+      *(tac->liveVarsIn) = *newLiveVarsOut;
       auto gens = tac->GetGenVars();
       auto kills = tac->GetKillVars();
       for (auto killedLoc : *(kills))
-        newLiveVars->erase(killedLoc);
-      newLiveVars->insert(gens->begin(), gens->end());
-
-      if (*newLiveVars != *(tac->liveVars))
-        changed = true;
-      tac->liveVars = newLiveVars;
+        tac->liveVarsIn->erase(killedLoc);
+      tac->liveVarsIn->insert(gens->begin(), gens->end());
     }
   }
 
@@ -290,22 +295,148 @@ void CodeGenerator::LiveVariableAnalysis()
   //   auto tac = code->Nth(i);
   //   tac->Print();
 
-  //   std::cout << "Kills: ";
-  //   auto kills = tac->GetKillVars();
-  //   for (auto loc : *(kills))
+  //   // std::cout << "Kills: ";
+  //   // auto kills = tac->GetKillVars();
+  //   // for (auto loc : *(kills))
+  //   //   std::cout << loc->GetName() << " ";
+  //   // std::cout << std::endl;
+
+  //   // std::cout << "Gens: ";
+  //   // auto gens = tac->GetGenVars();
+  //   // for (auto loc : *(gens))
+  //   //   std::cout << loc->GetName() << " ";
+  //   // std::cout << std::endl;
+
+  //   std::cout << "IN set: ";
+  //   for (auto loc : *(tac->liveVarsIn))
   //     std::cout << loc->GetName() << " ";
   //   std::cout << std::endl;
-
-  //   std::cout << "Gens: ";
-  //   auto gens = tac->GetGenVars();
-  //   for (auto loc : *(gens))
-  //     std::cout << loc->GetName() << " ";
-  //   std::cout << std::endl;
-
-  //   std::cout << "Live set: ";
-  //   for (auto loc : *(tac->liveVars))
+  //   std::cout << "Out set: ";
+  //   for (auto loc : *(tac->liveVarsOut))
   //     std::cout << loc->GetName() << " ";
   //   std::cout << std::endl;
   // }
+}
+
+void CodeGenerator::BuildInterferenceGraph()
+{
+  InterferenceGraph* currentGraph = nullptr;
+  for (int i = 0; i < code->NumElements(); i++)
+  {
+    auto tac = code->Nth(i);
+    if (auto beginFuncTac = dynamic_cast<BeginFunc*> (tac))
+    {
+      currentGraph = &(beginFuncTac->interferenceGraph);
+    }
+    if (currentGraph)
+    {
+      for (auto fromTac : *(tac->liveVarsIn))
+      {
+        for (auto toTac : *(tac->liveVarsIn))
+        {
+          if (fromTac != toTac)
+          {
+            (*currentGraph)[fromTac].insert(toTac);
+          }
+        }
+      }
+
+      for (auto killTac : *(tac->GetKillVars()))
+      {
+        for (auto outTac : *(tac->liveVarsOut))
+        {
+          if (killTac != outTac)
+          {
+            (*currentGraph)[killTac].insert(outTac);
+            (*currentGraph)[outTac].insert(killTac);
+          }
+        }
+      }
+    }
+
+    // debug output
+    // tac->Print();
+    // if (auto beginFuncTac = dynamic_cast<EndFunc*> (tac))
+    // {
+    //   std::cout << ">>> InferenceGraph begin: " << std::endl;
+    //   for (auto& kv : *currentGraph)
+    //   {
+    //     std::cout << kv.first->GetName() << " -> ";
+    //     for (auto toTac : kv.second)
+    //     {
+    //       std::cout << toTac->GetName() << " ";
+    //     }
+    //     std::cout << std::endl;
+    //   }
+    //   std::cout << ">>> InferenceGraph end." << std::endl;
+    // }
+  }
+}
+
+void CodeGenerator::ColorInterferenceGraph()
+{
+  InterferenceGraph* currentGraph = nullptr;
+  for (int i = 0; i < code->NumElements(); i++)
+  {
+    auto tac = code->Nth(i);
+    if (auto beginFuncTac = dynamic_cast<BeginFunc*> (tac))
+    {
+      currentGraph = &(beginFuncTac->interferenceGraph);
+      std::stack<Location*> removedNodes;
+      InterferenceGraph removedEdges;
+      while (currentGraph->size())
+      {
+        Location* maxNode;
+        int maxNodeSize = -1;
+        for (auto& kv : *currentGraph)
+        {
+          if (kv.second.size() > maxNodeSize)
+          {
+            maxNode = kv.first;
+            maxNodeSize = kv.second.size();
+          }
+        }
+        removedNodes.push(maxNode);
+        removedEdges[maxNode] = (*currentGraph)[maxNode];
+        currentGraph->erase(maxNode);
+        for (auto& kv : *currentGraph)
+        {
+          kv.second.erase(maxNode);
+        }
+      }
+
+      // int nextRegIndex = 0;
+      // Mips::Register generalPurposeRegs[] 
+      //     = {Mips::t0, Mips::t1, Mips::t2, Mips::t3, Mips::t4, Mips::t5, Mips::t6, 
+      //        Mips::t7, Mips::t8, Mips::t9, Mips::s0, Mips::s1, Mips::s2, Mips::s3,
+      //        Mips::s4, Mips::s5, Mips::s6, Mips::s7};
+      // while (removedNodes.size())
+      // {
+      //   auto node = removedNodes.top();
+      //   removedNodes.pop();
+      //   node->SetRegister(generalPurposeRegs[nextRegIndex++]);
+      //   currentGraph[node] = removedEdges[node];
+      //   removedEdges.erase(node);
+
+      // }
+    }
+
+    // debug output
+    // tac->Print();
+    // if (auto beginFuncTac = dynamic_cast<EndFunc*> (tac))
+    // {
+    //   std::cout << ">>> InferenceGraph begin: " << std::endl;
+    //   for (auto& kv : *currentGraph)
+    //   {
+    //     std::cout << kv.first->GetName() << " -> ";
+    //     for (auto toTac : kv.second)
+    //     {
+    //       std::cout << toTac->GetName() << " ";
+    //     }
+    //     std::cout << std::endl;
+    //   }
+    //   std::cout << ">>> InferenceGraph end." << std::endl;
+    // }
+  }
 }
 

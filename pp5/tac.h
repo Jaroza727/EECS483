@@ -27,6 +27,8 @@
 #include "mips.h"
 #include <set>
 #include <cstring>
+#include <map>
+
 
     // A Location object is used to identify the operands to the
     // various TAC instructions. A Location is either fp or gp
@@ -76,7 +78,7 @@ struct CompareLocationPtr {
 };
 
 using LiveVars = std::set<Location*, CompareLocationPtr>;
-
+using InterferenceGraph = std::map<Location*, std::set<Location*, CompareLocationPtr>, CompareLocationPtr>;
 
 
   // base class from which all Tac instructions derived
@@ -96,7 +98,8 @@ class Instruction {
 
   List<Instruction*> previous; // previous instructions
   List<Instruction*> next; // next instructions
-  LiveVars* liveVars; // live variables at the beginning of the variables
+  LiveVars* liveVarsIn; // live variables at the beginning of the instruction
+  LiveVars* liveVarsOut; // live variables at the end of the instruction
 };
 
   
@@ -230,6 +233,8 @@ class BeginFunc: public Instruction {
     // used to backpatch the instruction with frame size once known
     void SetFrameSize(int numBytesForAllLocalsAndTemps);
     void EmitSpecific(Mips *mips);
+
+    InterferenceGraph interferenceGraph;
 };
 
 class EndFunc: public Instruction {
