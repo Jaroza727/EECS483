@@ -298,7 +298,10 @@ void FnCall::EmitSpecific(Mips *mips) {
   for (int i = 0; i < vars.NumElements(); i++)
   {
     auto var = vars.Nth(i);
-    mips->FillRegister(var, var->GetRegister());
+    if (!mips->regs[var->GetRegister()].isDirty)
+    {
+      mips->FillRegister(var, var->GetRegister());
+    }
   }
 }
 
