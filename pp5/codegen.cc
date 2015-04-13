@@ -196,6 +196,7 @@ void CodeGenerator::DoFinalCodeGen()
   BuildCFG();
   LiveVariableAnalysis();
   BuildInterferenceGraph();
+  ColorInterferenceGraph();
 
   if (IsDebugOn("tac")) { // if debug don't translate to mips, just print Tac
     for (int i = 0; i < code->NumElements(); i++)
@@ -332,6 +333,7 @@ void CodeGenerator::BuildInterferenceGraph()
     {
       for (auto fromTac : *(tac->liveVarsIn))
       {
+        (*currentGraph)[fromTac] = {};
         for (auto toTac : *(tac->liveVarsIn))
         {
           if (fromTac != toTac)
@@ -343,6 +345,7 @@ void CodeGenerator::BuildInterferenceGraph()
 
       for (auto killTac : *(tac->GetKillVars()))
       {
+        (*currentGraph)[killTac] = {};
         for (auto outTac : *(tac->liveVarsOut))
         {
           if (killTac != outTac)
@@ -384,18 +387,19 @@ void CodeGenerator::ColorInterferenceGraph()
       currentGraph = &(beginFuncTac->interferenceGraph);
       std::stack<Location*> removedNodes;
       InterferenceGraph removedEdges;
-      while (currentGraph->size())
+      while (!currentGraph->empty())
       {
-        Location* maxNode;
+        Location* maxNode = nullptr;
         int maxNodeSize = -1;
         for (auto& kv : *currentGraph)
         {
-          if (kv.second.size() > maxNodeSize)
+          if ( ((int) kv.second.size()) > maxNodeSize)
           {
             maxNode = kv.first;
-            maxNodeSize = kv.second.size();
+            maxNodeSize = (int) kv.second.size();
           }
         }
+        Assert(maxNode);
         removedNodes.push(maxNode);
         removedEdges[maxNode] = (*currentGraph)[maxNode];
         currentGraph->erase(maxNode);
@@ -405,38 +409,45 @@ void CodeGenerator::ColorInterferenceGraph()
         }
       }
 
-      // int nextRegIndex = 0;
-      // Mips::Register generalPurposeRegs[] 
-      //     = {Mips::t0, Mips::t1, Mips::t2, Mips::t3, Mips::t4, Mips::t5, Mips::t6, 
-      //        Mips::t7, Mips::t8, Mips::t9, Mips::s0, Mips::s1, Mips::s2, Mips::s3,
-      //        Mips::s4, Mips::s5, Mips::s6, Mips::s7};
-      // while (removedNodes.size())
-      // {
-      //   auto node = removedNodes.top();
-      //   removedNodes.pop();
-      //   node->SetRegister(generalPurposeRegs[nextRegIndex++]);
-      //   currentGraph[node] = removedEdges[node];
-      //   removedEdges.erase(node);
-
-      // }
+      while (!removedNodes.empty())
+      {
+        auto node = removedNodes.top();
+        removedNodes.pop();
+        if ( ((int) removedEdges[node].size()) >= Mips::NumGeneralPurposeRegs)
+        {
+          node->SetRegister(Mips::zero);
+        }
+        else
+        {
+          std::set<Mips::Register> generalPurposeRegs
+            = {Mips::t0, Mips::t1, Mips::t2, Mips::t3, Mips::t4, Mips::t5, Mips::t6, 
+               Mips::t7, Mips::t8, Mips::t9, Mips::s0, Mips::s1, Mips::s2, Mips::s3,
+               Mips::s4, Mips::s5, Mips::s6, Mips::s7};
+          for (auto toNode : removedEdges[node])
+          {
+            generalPurposeRegs.erase(toNode->GetRegister());
+          }
+          node->SetRegister(*(generalPurposeRegs.begin()));
+        }
+        removedEdges.erase(node);
+      }
     }
-
-    // debug output
-    // tac->Print();
-    // if (auto beginFuncTac = dynamic_cast<EndFunc*> (tac))
-    // {
-    //   std::cout << ">>> InferenceGraph begin: " << std::endl;
-    //   for (auto& kv : *currentGraph)
-    //   {
-    //     std::cout << kv.first->GetName() << " -> ";
-    //     for (auto toTac : kv.second)
-    //     {
-    //       std::cout << toTac->GetName() << " ";
-    //     }
-    //     std::cout << std::endl;
-    //   }
-    //   std::cout << ">>> InferenceGraph end." << std::endl;
-    // }
   }
+
+  // debug output
+  // for (int i = 0; i < code->NumElements(); i++)
+  // {
+  //   auto tac = code->Nth(i);
+  //   tac->Print();
+  //   std::cout << "IN set: ";
+  //   for (auto loc : *(tac->liveVarsIn))
+  //     std::cout << loc->GetName() << ":" << Mips().regs[loc->GetRegister()].name << " ";
+  //   std::cout << std::endl;
+  //   std::cout << "Out set: ";
+  //   for (auto loc : *(tac->liveVarsOut))
+  //     std::cout << loc->GetName() << ":" << Mips().regs[loc->GetRegister()].name << " ";
+  //   std::cout << std::endl;
+  //   std::cout << "----------------" << std::endl;
+  // }
 }
 
