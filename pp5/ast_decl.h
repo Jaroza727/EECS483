@@ -85,6 +85,7 @@ class FnDecl : public Decl
     Stmt *body;
     std::string label;
     int offset = -8;
+    List<Location*> *formalLocs;
     
   public:
     FnDecl(Identifier *name, Type *returnType, List<VarDecl*> *formals);
@@ -96,6 +97,7 @@ class FnDecl : public Decl
     bool ifLCall();
     void Emit();
     Type *GetType() { return returnType; }
+    List<Location*> *GetFormals() { return formalLocs; }
 };
 
 #endif

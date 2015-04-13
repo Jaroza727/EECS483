@@ -106,6 +106,7 @@ FnDecl::FnDecl(Identifier *n, Type *r, List<VarDecl*> *d) : Decl(n) {
     (returnType=r)->SetParent(this);
     (formals=d)->SetParentAll(this);
     body = NULL;
+    formalLocs = new List<Location*>;
 }
 
 void FnDecl::SetFunctionBody(Stmt *b) { 
@@ -125,6 +126,7 @@ void FnDecl::Emit()
         var->SetLoc(new Location(Segment::fpRelative, para, "this"));
         para += 4;
         Insert("this", var);
+        formalLocs->Append(var->GetLoc());
     }
     for (int i = 0; i < formals->NumElements(); ++i)
     {
@@ -133,6 +135,7 @@ void FnDecl::Emit()
         var->SetLoc(new Location(Segment::fpRelative, para, name));
         para += 4;
         Insert(name, var);
+        formalLocs->Append(var->GetLoc());
     }
     if (body) body->Emit();
     bf->SetFrameSize(-8 - offset);

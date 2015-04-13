@@ -211,9 +211,10 @@ LiveVars* IfZ::GetGenVars()
 
 
 
-BeginFunc::BeginFunc() {
+BeginFunc::BeginFunc(List<Location*> *f) {
   sprintf(printed,"BeginFunc (unassigned)");
   frameSize = -555; // used as sentinel to recognized unassigned value
+  formals = f;
 }
 void BeginFunc::SetFrameSize(int numBytesForAllLocalsAndTemps) {
   frameSize = numBytesForAllLocalsAndTemps; 
@@ -223,6 +224,12 @@ void BeginFunc::EmitSpecific(Mips *mips) {
   mips->EmitBeginFunction(frameSize);
   /* pp5: need to load all parameters to the allocated registers.
    */
+  for (int i = 0; i < formals->NumElements(); i++)
+  {
+    auto loc = formals->Nth(i);
+    if (loc->GetRegister())
+      mips->FillRegister(loc, loc->GetRegister());
+  }
 }
 
 
@@ -273,16 +280,34 @@ void PopParams::EmitSpecific(Mips *mips) {
 } 
 
 
+void FnCall::EmitSpecific(Mips *mips) {
+  /* pp5: need to save registers before a function call
+   * and restore them back after the call.
+   */
+  List<Location*> vars;
+  for (int i = 0; i < Mips::NumRegs; i++)
+  {
+    auto& reg = mips->regs[i];
+    if (reg.isGeneralPurpose && reg.isDirty)
+    {
+      vars.Append(reg.var);
+      mips->SpillRegister(reg.var, (Mips::Register) i);
+    }
+  }
+  EmitCall(mips);
+  for (int i = 0; i < vars.NumElements(); i++)
+  {
+    auto var = vars.Nth(i);
+    mips->FillRegister(var, var->GetRegister());
+  }
+}
 
 
 LCall::LCall(const char *l, Location *d)
   :  label(strdup(l)), dst(d) {
   sprintf(printed, "%s%sLCall %s", dst? dst->GetName(): "", dst?" = ":"", label);
 }
-void LCall::EmitSpecific(Mips *mips) {
-  /* pp5: need to save registers before a function call
-   * and restore them back after the call.
-   */
+void LCall::EmitCall(Mips *mips) {
   mips->EmitLCall(dst, label);
 }
 
@@ -301,10 +326,7 @@ ACall::ACall(Location *ma, Location *d)
   sprintf(printed, "%s%sACall %s", dst? dst->GetName(): "", dst?" = ":"",
 	    methodAddr->GetName());
 }
-void ACall::EmitSpecific(Mips *mips) {
-  /* pp5: need to save registers before a function call
-   * and restore them back after the call.
-   */
+void ACall::EmitCall(Mips *mips) {
   mips->EmitACall(dst, methodAddr);
 } 
 

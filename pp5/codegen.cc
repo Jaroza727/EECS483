@@ -113,7 +113,7 @@ void CodeGenerator::GenReturn(Location *val)
 
 BeginFunc *CodeGenerator::GenBeginFunc(FnDecl *f)
 {
-  BeginFunc *result = new BeginFunc;
+  BeginFunc *result = new BeginFunc(f->GetFormals());
   code->Append(result);
   fn = f;
   return result;

@@ -228,8 +228,9 @@ class IfZ: public Instruction {
 
 class BeginFunc: public Instruction {
     int frameSize;
+    List<Location*> *formals;
   public:
-    BeginFunc();
+    BeginFunc(List<Location*> *f);
     // used to backpatch the instruction with frame size once known
     void SetFrameSize(int numBytesForAllLocalsAndTemps);
     void EmitSpecific(Mips *mips);
@@ -266,20 +267,26 @@ class PopParams: public Instruction {
     void EmitSpecific(Mips *mips);
 }; 
 
-class LCall: public Instruction {
+class FnCall: public Instruction {
+  public:
+    void EmitSpecific(Mips *mips);
+    virtual void EmitCall(Mips *mips) = 0;
+};
+
+class LCall: public FnCall {
     const char *label;
     Location *dst;
   public:
     LCall(const char *labe, Location *result);
-    void EmitSpecific(Mips *mips);
+    void EmitCall(Mips *mips) override;
     LiveVars* GetKillVars() override;
 };
 
-class ACall: public Instruction {
+class ACall: public FnCall {
     Location *dst, *methodAddr;
   public:
     ACall(Location *meth, Location *result);
-    void EmitSpecific(Mips *mips);
+    void EmitCall(Mips *mips) override;
     LiveVars* GetKillVars() override;
 };
 
