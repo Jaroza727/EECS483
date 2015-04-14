@@ -236,6 +236,7 @@ class BeginFunc: public Instruction {
     // used to backpatch the instruction with frame size once known
     void SetFrameSize(int numBytesForAllLocalsAndTemps);
     void EmitSpecific(Mips *mips);
+    // LiveVars* GetGenVars() override;
 
     InterferenceGraph interferenceGraph;
 };

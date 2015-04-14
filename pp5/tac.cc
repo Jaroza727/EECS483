@@ -250,6 +250,16 @@ void BeginFunc::EmitSpecific(Mips *mips) {
   }
 }
 
+// LiveVars* BeginFunc::GetGenVars()
+// {
+//   LiveVars *liveVars = new LiveVars;
+//   for (int i = 0; i < formals->NumElements(); i++)
+//   {
+//     liveVars->insert(formals->Nth(i));
+//   }
+//   return FilterGlobalVars(liveVars);
+// }
+
 
 EndFunc::EndFunc() : Instruction() {
   sprintf(printed, "EndFunc");
