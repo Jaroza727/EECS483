@@ -455,21 +455,8 @@ const char *Mips::NameForTac(OpCode code)
   return name;
 }
 
-/* Constructor
- * ----------
- * Constructor sets up the mips names and register descriptors to
- * the initial starting state.
- */
-Mips::Mips() {
-  mipsName[Add] = "add";
-  mipsName[Sub] = "sub";
-  mipsName[Mul] = "mul";
-  mipsName[Div] = "div";
-  mipsName[Mod] = "rem";
-  mipsName[Eq] = "seq";
-  mipsName[Less] = "slt";
-  mipsName[And] = "and";
-  mipsName[Or] = "or";
+void Mips::ClearRegister()
+{
   regs[zero] = (RegContents){false, NULL, "$zero", false};
   regs[at] = (RegContents){false, NULL, "$at", false};
   regs[v0] = (RegContents){false, NULL, "$v0", false};
@@ -502,6 +489,24 @@ Mips::Mips() {
   regs[s5] = (RegContents){false, NULL, "$s5", true};
   regs[s6] = (RegContents){false, NULL, "$s6", true};
   regs[s7] = (RegContents){false, NULL, "$s7", true};
+}
+
+/* Constructor
+ * ----------
+ * Constructor sets up the mips names and register descriptors to
+ * the initial starting state.
+ */
+Mips::Mips() {
+  mipsName[Add] = "add";
+  mipsName[Sub] = "sub";
+  mipsName[Mul] = "mul";
+  mipsName[Div] = "div";
+  mipsName[Mod] = "rem";
+  mipsName[Eq] = "seq";
+  mipsName[Less] = "slt";
+  mipsName[And] = "and";
+  mipsName[Or] = "or";
+  ClearRegister();
   rs = v0; rt = v1; rd = v0;
 }
 const char *Mips::mipsName[NumOps];

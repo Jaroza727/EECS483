@@ -238,6 +238,7 @@ EndFunc::EndFunc() : Instruction() {
 }
 void EndFunc::EmitSpecific(Mips *mips) {
   mips->EmitEndFunction();
+  mips->ClearRegister();
 }
 
 
@@ -288,7 +289,7 @@ void FnCall::EmitSpecific(Mips *mips) {
   for (int i = 0; i < Mips::NumRegs; i++)
   {
     auto& reg = mips->regs[i];
-    if (reg.isGeneralPurpose && reg.isDirty)
+    if (reg.isGeneralPurpose && reg.var)
     {
       vars.Append(reg.var);
       mips->SpillRegister(reg.var, (Mips::Register) i);

@@ -165,7 +165,7 @@ static struct _builtin {
   {"_PrintBool", 1, false},
   {"_Halt", 0, false}};
 
-Location *CodeGenerator::GenBuiltInCall(BuiltIn bn,Location *arg1, Location *arg2)
+Location *CodeGenerator::GenBuiltInCall(BuiltIn bn, Location *arg1, Location *arg2)
 {
   Assert(bn >= 0 && bn < NumBuiltIns);
   struct _builtin *b = &builtins[bn];
@@ -291,6 +291,7 @@ void CodeGenerator::LiveVariableAnalysis()
   }
 
   // debug output
+
   // for (int i = 0; i < code->NumElements(); i++)
   // {
   //   auto tac = code->Nth(i);
