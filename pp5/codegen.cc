@@ -235,7 +235,7 @@ void CodeGenerator::BuildCFG()
       auto jumpToTac = labelToTac.Lookup(ifZTac->GetLabel());
       ifZTac->next.Append(jumpToTac);
       jumpToTac->previous.Append(ifZTac);
-      
+
       ifZTac->next.Append(code->Nth(i+1));
       code->Nth(i+1)->previous.Append(ifZTac);
     }
@@ -417,22 +417,15 @@ void CodeGenerator::ColorInterferenceGraph()
       {
         auto node = removedNodes.top();
         removedNodes.pop();
-        if ( ((int) removedEdges[node].size()) >= Mips::NumGeneralPurposeRegs)
+        std::set<Mips::Register> generalPurposeRegs
+          = {Mips::t0, Mips::t1, Mips::t2, Mips::t3, Mips::t4, Mips::t5, Mips::t6, 
+             Mips::t7, Mips::t8, Mips::t9, Mips::s0, Mips::s1, Mips::s2, Mips::s3,
+             Mips::s4, Mips::s5, Mips::s6, Mips::s7};
+        for (auto toNode : removedEdges[node])
         {
-          node->SetRegister(Mips::zero);
+          generalPurposeRegs.erase(toNode->GetRegister());
         }
-        else
-        {
-          std::set<Mips::Register> generalPurposeRegs
-            = {Mips::t0, Mips::t1, Mips::t2, Mips::t3, Mips::t4, Mips::t5, Mips::t6, 
-               Mips::t7, Mips::t8, Mips::t9, Mips::s0, Mips::s1, Mips::s2, Mips::s3,
-               Mips::s4, Mips::s5, Mips::s6, Mips::s7};
-          for (auto toNode : removedEdges[node])
-          {
-            generalPurposeRegs.erase(toNode->GetRegister());
-          }
-          node->SetRegister(*(generalPurposeRegs.begin()));
-        }
+        node->SetRegister(*(generalPurposeRegs.begin()));
         removedEdges.erase(node);
       }
     }
