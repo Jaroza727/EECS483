@@ -1,0 +1,6 @@
+void main() {
+  string[] b;
+
+  b = NewArray(1, string);
+  b[0] = "Done";
+}
