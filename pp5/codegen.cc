@@ -347,12 +347,12 @@ void CodeGenerator::BuildInterferenceGraph()
       for (auto killTac : *(tac->GetKillVars()))
       {
         (*currentGraph)[killTac] = {};
-        for (auto outTac : *(tac->liveVarsOut))
+        for (auto inTac : *(tac->liveVarsIn))
         {
-          if (killTac != outTac)
+          if (killTac != inTac)
           {
-            (*currentGraph)[killTac].insert(outTac);
-            (*currentGraph)[outTac].insert(killTac);
+            (*currentGraph)[killTac].insert(inTac);
+            (*currentGraph)[inTac].insert(killTac);
           }
         }
       }
