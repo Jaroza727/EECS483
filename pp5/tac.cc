@@ -76,7 +76,7 @@ LiveVars* LoadStringConstant::GetKillVars()
 {
   return FilterGlobalVars(new LiveVars {dst});
 }
-     
+
 
 
 LoadLabel::LoadLabel(Location *d, const char *l)
@@ -318,9 +318,9 @@ void FnCall::EmitSpecific(Mips *mips) {
    */
   for (auto var : *liveVarsIn)
   {
-    if (var->GetRegister())
+    if ((auto reg = var->GetRegister()) && Mips::regs[reg].isDirty)
     {
-      mips->SpillRegister(var, var->GetRegister());
+      mips->SpillRegister(var, reg);
     }
   }
   EmitCall(mips);

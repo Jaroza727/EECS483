@@ -234,8 +234,11 @@ void CodeGenerator::BuildCFG()
     {
       auto jumpToTac = labelToTac.Lookup(ifZTac->GetLabel());
       ifZTac->next.Append(jumpToTac);
-      ifZTac->next.Append(code->Nth(i+1));
       jumpToTac->previous.Append(ifZTac);
+
+      if (dynamic_cast<ACall*>(code->Nth(i+1)) || dynamic_cast<LCall*>(code->Nth(i+1)))
+        continue;
+      ifZTac->next.Append(code->Nth(i+1));
       code->Nth(i+1)->previous.Append(ifZTac);
     }
     else if (auto gotoTac = dynamic_cast<Goto*>(tac))
@@ -246,6 +249,8 @@ void CodeGenerator::BuildCFG()
     }
     else
     {
+      if (dynamic_cast<ACall*>(code->Nth(i+1)) || dynamic_cast<LCall*>(code->Nth(i+1)))
+        continue;
       tac->next.Append(code->Nth(i+1));
       code->Nth(i+1)->previous.Append(tac);
     }
