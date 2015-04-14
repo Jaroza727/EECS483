@@ -318,7 +318,7 @@ void FnCall::EmitSpecific(Mips *mips) {
    */
   for (auto var : *liveVarsIn)
   {
-    if (var->GetRegister() && mips->regs[var->GetRegister()].isDirty)
+    if (var->GetRegister())
     {
       mips->SpillRegister(var, var->GetRegister());
     }
