@@ -285,21 +285,17 @@ void FnCall::EmitSpecific(Mips *mips) {
   /* pp5: need to save registers before a function call
    * and restore them back after the call.
    */
-  List<Location*> vars;
-  for (int i = 0; i < Mips::NumRegs; i++)
+  for (auto var : *liveVarsIn)
   {
-    auto& reg = mips->regs[i];
-    if (reg.isGeneralPurpose && reg.var)
+    if (var->GetRegister())
     {
-      vars.Append(reg.var);
-      mips->SpillRegister(reg.var, (Mips::Register) i);
+      mips->SpillRegister(var, var->GetRegister());
     }
   }
   EmitCall(mips);
-  for (int i = 0; i < vars.NumElements(); i++)
+  for (auto var : *liveVarsIn)
   {
-    auto var = vars.Nth(i);
-    if (!mips->regs[var->GetRegister()].isDirty)
+    if (var->GetRegister())
     {
       mips->FillRegister(var, var->GetRegister());
     }
