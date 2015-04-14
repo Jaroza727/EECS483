@@ -67,6 +67,7 @@ void Mips::FillRegister(Location *src, Register reg)
        src->GetOffset(), offsetFromWhere, src->GetName(), regs[reg].name,
        offsetFromWhere,src->GetOffset());
   regs[reg].isDirty = false;
+  regs[reg].var = src;
 }
 
 
