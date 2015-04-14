@@ -292,32 +292,32 @@ void CodeGenerator::LiveVariableAnalysis()
 
   ////// debug output
 
-  for (int i = 0; i < code->NumElements(); i++)
-  {
-    auto tac = code->Nth(i);
-    tac->Print();
+  // for (int i = 0; i < code->NumElements(); i++)
+  // {
+  //   auto tac = code->Nth(i);
+  //   tac->Print();
 
-    // std::cout << "Kills: ";
-    // auto kills = tac->GetKillVars();
-    // for (auto loc : *(kills))
-    //   std::cout << loc->GetName() << " ";
-    // std::cout << std::endl;
+  //   // std::cout << "Kills: ";
+  //   // auto kills = tac->GetKillVars();
+  //   // for (auto loc : *(kills))
+  //   //   std::cout << loc->GetName() << " ";
+  //   // std::cout << std::endl;
 
-    // std::cout << "Gens: ";
-    // auto gens = tac->GetGenVars();
-    // for (auto loc : *(gens))
-    //   std::cout << loc->GetName() << " ";
-    // std::cout << std::endl;
+  //   // std::cout << "Gens: ";
+  //   // auto gens = tac->GetGenVars();
+  //   // for (auto loc : *(gens))
+  //   //   std::cout << loc->GetName() << " ";
+  //   // std::cout << std::endl;
 
-    std::cout << "IN set: ";
-    for (auto loc : *(tac->liveVarsIn))
-      std::cout << loc->GetName() << " ";
-    std::cout << std::endl;
-    std::cout << "Out set: ";
-    for (auto loc : *(tac->liveVarsOut))
-      std::cout << loc->GetName() << " ";
-    std::cout << std::endl;
-  }
+  //   std::cout << "IN set: ";
+  //   for (auto loc : *(tac->liveVarsIn))
+  //     std::cout << loc->GetName() << " ";
+  //   std::cout << std::endl;
+  //   std::cout << "Out set: ";
+  //   for (auto loc : *(tac->liveVarsOut))
+  //     std::cout << loc->GetName() << " ";
+  //   std::cout << std::endl;
+  // }
 }
 
 void CodeGenerator::BuildInterferenceGraph()
