@@ -270,7 +270,10 @@ void Return::EmitSpecific(Mips *mips) {
 
 LiveVars* Return::GetGenVars()
 {
-  return FilterGlobalVars(new LiveVars {val});
+  if (val)
+    return FilterGlobalVars(new LiveVars {val});
+  else
+    return new LiveVars;
 }
 
 
