@@ -28,6 +28,19 @@ void Instruction::Emit(Mips *mips) {
   EmitSpecific(mips);
 }
 
+LiveVars* Instruction::FilterGlobalVars(LiveVars* liveVars)
+{
+  LiveVars* result = new LiveVars;
+  for (auto var : *liveVars)
+  {
+    if (var->GetSegment() == fpRelative)
+    {
+      result->insert(var);
+    }
+  }
+  return result;
+}
+
 
 
 LoadConstant::LoadConstant(Location *d, int v)
@@ -41,7 +54,7 @@ void LoadConstant::EmitSpecific(Mips *mips) {
 
 LiveVars* LoadConstant::GetKillVars()
 {
-  return new LiveVars {dst};
+  return FilterGlobalVars(new LiveVars {dst});
 }
 
 
@@ -61,7 +74,7 @@ void LoadStringConstant::EmitSpecific(Mips *mips) {
 
 LiveVars* LoadStringConstant::GetKillVars()
 {
-  return new LiveVars {dst};
+  return FilterGlobalVars(new LiveVars {dst});
 }
      
 
@@ -77,7 +90,7 @@ void LoadLabel::EmitSpecific(Mips *mips) {
 
 LiveVars* LoadLabel::GetKillVars()
 {
-  return new LiveVars {dst};
+  return FilterGlobalVars(new LiveVars {dst});
 }
 
 
@@ -93,12 +106,12 @@ void Assign::EmitSpecific(Mips *mips) {
 
 LiveVars* Assign::GetKillVars()
 {
-  return new LiveVars {dst};
+  return FilterGlobalVars(new LiveVars {dst});
 }
 
 LiveVars* Assign::GetGenVars()
 {
-  return new LiveVars {src};
+  return FilterGlobalVars(new LiveVars {src});
 }
 
 
@@ -118,12 +131,12 @@ void Load::EmitSpecific(Mips *mips) {
 
 LiveVars* Load::GetGenVars()
 {
-  return new LiveVars {src};
+  return FilterGlobalVars(new LiveVars {src});
 }
 
 LiveVars* Load::GetKillVars()
 {
-  return new LiveVars {dst};
+  return FilterGlobalVars(new LiveVars {dst});
 }
 
 
@@ -142,7 +155,7 @@ void Store::EmitSpecific(Mips *mips) {
 
 LiveVars* Store::GetGenVars()
 {
-  return new LiveVars {dst, src};
+  return FilterGlobalVars(new LiveVars {dst, src});
 }
 
  
@@ -168,12 +181,12 @@ void BinaryOp::EmitSpecific(Mips *mips) {
 
 LiveVars* BinaryOp::GetGenVars()
 {
-  return new LiveVars {op1, op2};
+  return FilterGlobalVars(new LiveVars {op1, op2});
 }
 
 LiveVars* BinaryOp::GetKillVars()
 {
-  return new LiveVars {dst};
+  return FilterGlobalVars(new LiveVars {dst});
 }
 
 
@@ -211,7 +224,7 @@ void IfZ::EmitSpecific(Mips *mips) {
 
 LiveVars* IfZ::GetGenVars()
 {
-  return new LiveVars {test};
+  return FilterGlobalVars(new LiveVars {test});
 }
 
 
@@ -257,7 +270,7 @@ void Return::EmitSpecific(Mips *mips) {
 
 LiveVars* Return::GetGenVars()
 {
-  return new LiveVars {val};
+  return FilterGlobalVars(new LiveVars {val});
 }
 
 
@@ -272,7 +285,7 @@ void PushParam::EmitSpecific(Mips *mips) {
 
 LiveVars* PushParam::GetGenVars()
 {
-  return new LiveVars {param};
+  return FilterGlobalVars(new LiveVars {param});
 }
 
 
@@ -319,7 +332,7 @@ void LCall::EmitCall(Mips *mips) {
 LiveVars* LCall::GetKillVars()
 {
   if (dst)
-    return new LiveVars {dst};
+    return FilterGlobalVars(new LiveVars {dst});
   else
     return new LiveVars;
 }
@@ -338,7 +351,7 @@ void ACall::EmitCall(Mips *mips) {
 LiveVars* ACall::GetKillVars()
 {
   if (dst)
-    return new LiveVars {dst};
+    return FilterGlobalVars(new LiveVars {dst});
   else
     return new LiveVars;
 }

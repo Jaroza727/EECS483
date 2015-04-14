@@ -95,6 +95,7 @@ class Instruction {
 	virtual void Emit(Mips *mips);
   virtual LiveVars* GetGenVars() { return new LiveVars; }
   virtual LiveVars* GetKillVars() { return new LiveVars; }
+  LiveVars* FilterGlobalVars(LiveVars* liveVars);
 
   List<Instruction*> previous; // previous instructions
   List<Instruction*> next; // next instructions

@@ -139,6 +139,7 @@ void SysCallCodeGen()
     printf("	  addiu $fp, $sp, 8     # set up new fp\n");
     printf("	  lw $a0, 4($fp)        # fill a from $fp+4\n");
     printf("	  lw $a1, 8($fp)        # fill a from $fp+8\n");
+    printf("    li  $v0,1\n");
     printf("	  beq $a0,$a1,Lrunt10\n");
     printf("  Lrunt12:\n");
     printf("	  lbu  $v0,($a0)\n");
