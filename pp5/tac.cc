@@ -116,6 +116,11 @@ void Load::EmitSpecific(Mips *mips) {
   mips->EmitLoad(dst, src, offset);
 }
 
+LiveVars* Load::GetGenVars()
+{
+  return new LiveVars {src};
+}
+
 LiveVars* Load::GetKillVars()
 {
   return new LiveVars {dst};
@@ -137,7 +142,7 @@ void Store::EmitSpecific(Mips *mips) {
 
 LiveVars* Store::GetGenVars()
 {
-  return new LiveVars {src};
+  return new LiveVars {dst, src};
 }
 
  

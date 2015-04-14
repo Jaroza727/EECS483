@@ -309,14 +309,14 @@ void CodeGenerator::LiveVariableAnalysis()
   //   //   std::cout << loc->GetName() << " ";
   //   // std::cout << std::endl;
 
-  //   std::cout << "IN set: ";
-  //   for (auto loc : *(tac->liveVarsIn))
-  //     std::cout << loc->GetName() << " ";
-  //   std::cout << std::endl;
-  //   std::cout << "Out set: ";
-  //   for (auto loc : *(tac->liveVarsOut))
-  //     std::cout << loc->GetName() << " ";
-  //   std::cout << std::endl;
+  //   // std::cout << "IN set: ";
+  //   // for (auto loc : *(tac->liveVarsIn))
+  //   //   std::cout << loc->GetName() << " ";
+  //   // std::cout << std::endl;
+  //   // std::cout << "Out set: ";
+  //   // for (auto loc : *(tac->liveVarsOut))
+  //   //   std::cout << loc->GetName() << " ";
+  //   // std::cout << std::endl;
   // }
 }
 

@@ -172,6 +172,7 @@ class Load: public Instruction {
     Load(Location *dst, Location *src, int offset = 0);
     void EmitSpecific(Mips *mips);
     LiveVars* GetKillVars() override;
+    LiveVars* GetGenVars() override;
 };
 
 class Store: public Instruction {
